@@ -10,6 +10,7 @@ import {
 } from "@/services/browser-api";
 
 import { EventCard } from "./event-card";
+import { FutureEvents } from "./future-events";
 
 const VISITOR_KEY = "salseros:visitor-id:v1";
 const RSVP_KEY = "salseros:rsvps:v1";
@@ -180,58 +181,66 @@ export function WeeklyAgenda() {
 
   if (agenda.days.length === 0) {
     return (
-      <section className="agenda-state" aria-live="polite">
-        <CalendarDays size={30} aria-hidden="true" />
-        <h2>La pista está tranquila</h2>
-        <p>Todavía no encontramos sociales para los próximos siete días.</p>
-      </section>
+      <>
+        <section className="agenda-state" aria-live="polite">
+          <CalendarDays size={30} aria-hidden="true" />
+          <h2>La pista está tranquila</h2>
+          <p>Todavía no encontramos sociales para los próximos siete días.</p>
+        </section>
+        <FutureEvents events={agenda.futureEvents} />
+      </>
     );
   }
 
   return (
-    <section className="agenda" aria-labelledby="agenda-title">
-      <div className="section-heading">
-        <p className="eyebrow">Próximos 7 días</p>
-        <h2 id="agenda-title">¿Dónde bailamos?</h2>
-      </div>
+    <>
+      <section className="agenda" aria-labelledby="agenda-title">
+        <div className="section-heading">
+          <p className="eyebrow">Próximos 7 días</p>
+          <h2 id="agenda-title">¿Dónde bailamos?</h2>
+        </div>
 
-      {notice ? (
-        <p className="inline-notice" role="status">
-          {notice}
-        </p>
-      ) : null}
+        {notice ? (
+          <p className="inline-notice" role="status">
+            {notice}
+          </p>
+        ) : null}
 
-      <div className="agenda__days">
-        {agenda.days.map((day) => (
-          <section className="day-row" key={day.date}>
-            <header className="day-row__heading">
-              <span>{day.weekday}</span>
-              <strong>{day.fullDate}</strong>
-            </header>
-            <div className="day-row__events">
-              {day.events.map((event) => (
-                <EventCard
-                  key={event.eventId}
-                  event={event}
-                  selected={selected.has(event.eventId)}
-                  pending={pending.has(event.eventId)}
-                  onToggle={() => void toggle(event.eventId, event.attendants)}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+        <div className="agenda__days">
+          {agenda.days.map((day) => (
+            <section className="day-row" key={day.date}>
+              <header className="day-row__heading">
+                <span>{day.weekday}</span>
+                <strong>{day.fullDate}</strong>
+              </header>
+              <div className="day-row__events">
+                {day.events.map((event) => (
+                  <EventCard
+                    key={event.eventId}
+                    event={event}
+                    selected={selected.has(event.eventId)}
+                    pending={pending.has(event.eventId)}
+                    onToggle={() =>
+                      void toggle(event.eventId, event.attendants)
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
 
-      {agenda.updatedAt ? (
-        <p className="agenda__updated">
-          Agenda actualizada{" "}
-          {new Intl.DateTimeFormat("es-AR", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }).format(new Date(agenda.updatedAt))}
-        </p>
-      ) : null}
-    </section>
+        {agenda.updatedAt ? (
+          <p className="agenda__updated">
+            Agenda actualizada{" "}
+            {new Intl.DateTimeFormat("es-AR", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }).format(new Date(agenda.updatedAt))}
+          </p>
+        ) : null}
+      </section>
+      <FutureEvents events={agenda.futureEvents} />
+    </>
   );
 }

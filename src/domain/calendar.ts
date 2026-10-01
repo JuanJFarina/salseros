@@ -51,20 +51,34 @@ export function buildEventsResponse(
   now = new Date(),
 ): EventsResponse {
   const window = eventWindow(now);
-  const visibleEvents = events
+  const activeEvents = events
     .filter((event) => event.status === "active")
-    .filter((event) => {
-      const startsAt = new Date(event.nextSocialDate);
-      return (
-        startsAt >= window.startsAt &&
-        startsAt < window.endsAt &&
-        effectiveEnd(event) > now
-      );
-    })
+    .filter((event) => effectiveEnd(event) > now)
     .sort(
       (left, right) =>
         Date.parse(left.nextSocialDate) - Date.parse(right.nextSocialDate),
     );
+  const visibleEvents = activeEvents.filter((event) => {
+    const startsAt = new Date(event.nextSocialDate);
+    return startsAt >= window.startsAt && startsAt < window.endsAt;
+  });
+  const futureEvents = activeEvents
+    .filter(
+      (event) =>
+        new Date(event.nextSocialDate) >= window.endsAt &&
+        !event.sourceMediaIds.some((mediaId) =>
+          mediaId.startsWith("recurring:"),
+        ),
+    )
+    .map((event) => ({
+      eventId: event.eventId,
+      socialName: event.socialName,
+      date: event.nextSocialDate,
+      instagramAccount: event.instagramAccount,
+      sourcePermalink:
+        event.sourcePermalinks[0] ??
+        `https://www.instagram.com/${event.instagramAccount}/`,
+    }));
 
   const grouped = new Map<string, EventRecord[]>();
   for (const event of visibleEvents) {
@@ -94,5 +108,6 @@ export function buildEventsResponse(
       endsAt: window.endsAt.toISOString(),
     },
     days,
+    futureEvents,
   };
 }

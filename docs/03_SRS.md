@@ -64,6 +64,10 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
   - “¡Pa'llá voy!” toggle.
   - Link to a source Instagram publication.
 - **FR-10:** The page shall display the last successful data update without implying that Instagram itself was checked at that exact moment.
+- **FR-10a:** Active non-recurring events beginning after the seven-day window shall appear in a separate chronological list between the agenda and source-request form.
+- **FR-10b:** A known-later row shall show only the local date, event name, and Instagram source link, without time, address, attendance count, or RSVP action.
+- **FR-10c:** The known-later section shall be omitted when no qualifying events exist.
+- **FR-10d:** Manually configured recurring events shall never appear in the known-later section.
 
 ### Event reads
 

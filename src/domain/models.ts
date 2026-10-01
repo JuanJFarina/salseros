@@ -29,6 +29,14 @@ export type EventDay = {
   events: EventRecord[];
 };
 
+export type KnownFutureEvent = {
+  eventId: string;
+  socialName: string;
+  date: string;
+  instagramAccount: string;
+  sourcePermalink: string;
+};
+
 export type EventsResponse = {
   generatedAt: string;
   updatedAt: string | null;
@@ -37,6 +45,7 @@ export type EventsResponse = {
     endsAt: string;
   };
   days: EventDay[];
+  futureEvents: KnownFutureEvent[];
 };
 
 export type SourceRecord = {

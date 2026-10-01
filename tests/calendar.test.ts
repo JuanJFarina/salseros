@@ -46,6 +46,9 @@ describe("buildEventsResponse", () => {
     ]);
     expect(response.days.flatMap((day) => day.events.map((item) => item.eventId)))
       .toEqual(["today", "later"]);
+    expect(response.futureEvents.map((item) => item.eventId)).toEqual([
+      "outside",
+    ]);
   });
 
   it("returns no day rows when the period has no events", () => {
@@ -55,5 +58,24 @@ describe("buildEventsResponse", () => {
     );
 
     expect(response.days).toEqual([]);
+    expect(response.futureEvents).toEqual([]);
+  });
+
+  it("excludes configured recurring events from the later list", () => {
+    const recurring = {
+      ...event("recurring", "2026-10-11T16:00:00-03:00"),
+      sourceMediaIds: ["recurring:source"],
+    };
+    const response = buildEventsResponse(
+      [
+        recurring,
+        event("announced", "2026-10-17T23:00:00-03:00"),
+      ],
+      new Date("2026-10-01T15:00:00.000Z"),
+    );
+
+    expect(response.futureEvents.map((item) => item.eventId)).toEqual([
+      "announced",
+    ]);
   });
 });

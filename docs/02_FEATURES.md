@@ -6,6 +6,7 @@
 - **Chronological day rows:** Group events by day, order days and events chronologically, and omit days without events.
 - **Multiple events per day:** Present events from the same day in one responsive row, wrapping or stacking on narrow screens.
 - **Focused event cards:** Show the event name prominently, followed by start time, address, attendance count, and source link.
+- **Known later events:** Below the seven-day agenda, show a compact chronological list of non-recurring events already known beyond the public window with only date, event name, and Instagram link.
 - **Lightweight attendance:** Let a visitor toggle “¡Pa'llá voy!” without registering. Store the visitor's selection locally and update the shared count.
 - **Empty state:** Show a friendly message when the complete seven-day period has no events.
 - **Source request form:** Let a visitor submit one Instagram username at the bottom of the page. Store valid, non-duplicate requests as pending for manual review.
