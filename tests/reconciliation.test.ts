@@ -21,11 +21,12 @@ const publication: InstagramPublication = {
 function extraction(
   address = "Lagos 1567",
   confidence = 0.95,
+  name = "Rumba",
 ): ExtractionResult {
   return {
     events: [
       {
-        name: "Rumba",
+        name,
         startsAt: "2026-10-03T23:15:00-03:00",
         endsAt: "2026-10-04T04:00:00-03:00",
         address,
@@ -42,7 +43,7 @@ describe("reconcilePublication", () => {
       "rumbavanaok",
       publication,
       extraction(),
-      extraction("Ov. Lagos 1567"),
+      extraction("Ov. Lagos 1567", 0.95, "Tus Martes a puro Baile"),
       new Date("2026-10-01T12:00:00.000Z"),
     );
 
@@ -64,17 +65,26 @@ describe("reconcilePublication", () => {
     expect(result.review?.reason).toContain("disagree");
   });
 
-  it("accepts a clear caption when visual evidence is unavailable", () => {
-    const result = reconcilePublication(
+  it("accepts complete high-confidence evidence from either path", () => {
+    const captionOnly = reconcilePublication(
       "rumbavanaok",
       publication,
       extraction(),
       { events: [] },
       new Date("2026-10-01T12:00:00.000Z"),
     );
+    const visionOnly = reconcilePublication(
+      "rumbavanaok",
+      publication,
+      { events: [] },
+      extraction(),
+      new Date("2026-10-01T12:00:00.000Z"),
+    );
 
-    expect(result.events).toHaveLength(1);
-    expect(result.events[0].extractionConfidence).toBeCloseTo(0.855);
+    expect(captionOnly.events).toHaveLength(1);
+    expect(captionOnly.events[0].extractionConfidence).toBeCloseTo(0.855);
+    expect(visionOnly.events).toHaveLength(1);
+    expect(visionOnly.events[0].extractionConfidence).toBe(0.95);
   });
 });
 

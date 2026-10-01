@@ -268,11 +268,21 @@ class GoogleSheetsRepository implements SalseRosRepository {
       ),
       now,
     );
+    const acceptedMediaIds = new Set(
+      commit.events.flatMap((event) => event.sourceMediaIds),
+    );
+    const incomingReviewIds = new Set(
+      commit.reviews.map((review) => review.reviewId),
+    );
     const reviews = retainReviews(
       mergeBy(
         reviewRows.map(reviewFromRow),
         commit.reviews,
         (review) => review.reviewId,
+      ).filter(
+        (review) =>
+          !acceptedMediaIds.has(review.mediaId) ||
+          incomingReviewIds.has(review.reviewId),
       ),
       now,
     );

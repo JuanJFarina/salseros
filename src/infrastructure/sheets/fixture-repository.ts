@@ -200,6 +200,17 @@ export class FixtureRepository implements SalseRosRepository {
       commit.reviews,
       (review) => review.reviewId,
     );
+    const acceptedMediaIds = new Set(
+      commit.events.flatMap((event) => event.sourceMediaIds),
+    );
+    const incomingReviewIds = new Set(
+      commit.reviews.map((review) => review.reviewId),
+    );
+    reviews = reviews.filter(
+      (review) =>
+        !acceptedMediaIds.has(review.mediaId) ||
+        incomingReviewIds.has(review.reviewId),
+    );
     runs = mergeBy(runs, commit.runs, (run) => run.syncRunId);
     eventRequests = mergeBy(
       eventRequests,

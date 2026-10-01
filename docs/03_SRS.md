@@ -142,7 +142,7 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 
 - **FR-53:** Each source shall be queried through Meta Graph API v26 or a compatible later version using Business Discovery.
 - **FR-54:** The querying professional-account ID shall be configured by `META_IG_USER_ID`.
-- **FR-55:** The server shall fetch exactly the latest three available publications per source.
+- **FR-55:** The server shall fetch the latest six chronological publications per source.
 - **FR-56:** Requested publication fields shall include identifiers, caption, media type, permalink, publication timestamp, visual URL or thumbnail when available, and carousel children when applicable.
 - **FR-57:** IMAGE publications shall use their image; CAROUSEL_ALBUM publications shall use available children; VIDEO or Reel publications shall use an available thumbnail.
 - **FR-58:** Media bytes shall be downloaded only in memory, subject to content-type and size limits, and discarded after extraction.
@@ -161,8 +161,9 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-68:** A missing year shall be inferred as the nearest plausible non-past occurrence relative to the publication timestamp and Rosario timezone.
 - **FR-69:** Day-of-week text shall agree with the resolved date when both are present.
 - **FR-70:** A candidate requires a name, future local start, and address before automatic publication.
-- **FR-71:** Caption and vision agreement on event identity, date, and venue shall produce a high-confidence candidate.
+- **FR-71:** Caption and vision agreement on date, time, and venue shall produce a high-confidence candidate even when their event-name wording differs.
 - **FR-72:** A complete and deterministic caption result may remain high confidence when the visual path has no relevant evidence, provided the visual path does not contradict it.
+- **FR-72a:** A complete visual result with at least 0.9 confidence may publish without caption evidence when its date, time, and place are valid and future.
 - **FR-73:** Direct disagreement, missing required data, impossible dates, or invalid schema shall create or update an `ExtractionReviews` row and shall not publish the candidate.
 - **FR-74:** Detected cancellation or material rescheduling shall require review rather than automatically removing or moving a published event.
 - **FR-75:** The Gemini model shall be configurable through `GEMINI_MODEL`.

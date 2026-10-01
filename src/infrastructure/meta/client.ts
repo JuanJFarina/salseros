@@ -106,10 +106,10 @@ async function metaRequest(url: URL): Promise<unknown> {
 export async function fetchRecentPublications(
   username: string,
 ): Promise<InstagramPublication[]> {
-  const { graphVersion, igUserId } = getMetaSettings();
+  const { graphVersion, igUserId, publicationLimit } = getMetaSettings();
   const fields =
     `business_discovery.username(${username})` +
-    "{media.limit(3){id,caption,media_type,media_url,thumbnail_url," +
+    `{media.limit(${publicationLimit}){id,caption,media_type,media_url,thumbnail_url,` +
     "permalink,timestamp,children{media_type,media_url,thumbnail_url}}}";
   const url = new URL(
     `https://graph.facebook.com/${graphVersion}/${igUserId}`,

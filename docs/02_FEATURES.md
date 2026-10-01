@@ -16,10 +16,10 @@
 ## Event discovery
 
 - **Configured Instagram sources:** Read enabled professional-account usernames from a Google Sheets `Sources` tab. Validate initial candidates through Business Discovery before enabling them.
-- **Recent-publication inspection:** Retrieve the latest three publications for every enabled source through Meta Business Discovery.
+- **Recent-publication inspection:** Retrieve the latest six chronological publications for every enabled source through Meta Business Discovery.
 - **Caption extraction:** Convert publication captions into structured candidate events.
 - **Vision cross-check:** Use Gemini to independently extract event details from images, carousel images, or available video thumbnails.
-- **Confidence gate:** Automatically publish candidates whose caption and visual evidence agree and pass deterministic validation.
+- **Confidence gate:** Automatically publish candidates whose date, time, and place evidence agree and pass deterministic validation; accept complete high-confidence visual evidence when a Reel has no caption.
 - **Review queue:** Store disagreements, incomplete candidates, and invalid candidates in Google Sheets without publishing them.
 - **Duplicate consolidation:** Merge repeated announcements of the same account, local date, and event rather than creating duplicate events.
 - **Source provenance:** Retain publication IDs, permalinks, publication timestamps, and extraction freshness for every published event.

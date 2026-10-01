@@ -13,7 +13,7 @@ User accounts, verified attendance, Stories, scraping, ticketing, maps, notifica
 - **Application:** Current stable Next.js App Router, React, strict TypeScript, and Node.js Route Handlers.
 - **Hosting:** Vercel.
 - **Styling:** Small global stylesheet with design tokens; no UI framework is required.
-- **Instagram:** Meta Graph Business Discovery only; latest three publications per source.
+- **Instagram:** Meta Graph Business Discovery only; latest six chronological publications per source.
 - **Recurring exceptions:** Generate Torito and Salsipuedes from explicit weekly configuration and omit them from Meta scans.
 - **Meta token:** Exchange short-lived Facebook User tokens for approximately 60-day tokens and monitor expiry; do not assume unattended refresh is available.
 - **Extraction:** Gemini structured output with separate caption and visual evidence paths.
@@ -57,7 +57,7 @@ The intended initial footprint is compatible with low-volume or free-tier usage:
 - One Vercel project.
 - One Google spreadsheet.
 - One Google service account with access only to that spreadsheet.
-- Meta Graph API calls for three publications per enabled source per synchronization window.
+- Meta Graph API calls for six publications per enabled source per synchronization window.
 - Up to two Gemini extraction calls per relevant publication.
 - An external scheduler owned by the operator.
 

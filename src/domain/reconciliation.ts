@@ -51,7 +51,6 @@ function matchingVisualCandidate(
   return (
     candidates.find(
       (candidate) =>
-        relatedText(candidate.name, caption.name) &&
         relatedText(candidate.address, caption.address) &&
         Math.abs(
           Date.parse(candidate.startsAt) - Date.parse(caption.startsAt),
@@ -80,6 +79,35 @@ function candidateIssue(
   return null;
 }
 
+function eventFromCandidate(
+  username: string,
+  sourceId: string,
+  publication: InstagramPublication,
+  candidate: ExtractionCandidate,
+  confidence: number,
+  now: Date,
+): EventRecord {
+  const timestamp = now.toISOString();
+  return {
+    eventId: eventIdFor(username, candidate.startsAt, candidate.name),
+    sourceId,
+    instagramAccount: username,
+    socialName: candidate.name.trim(),
+    nextSocialDate: candidate.startsAt,
+    endsAt: candidate.endsAt,
+    address: candidate.address.trim(),
+    status: "active",
+    attendants: 0,
+    timeApproximate: false,
+    sourceMediaIds: [publication.mediaId],
+    sourcePermalinks: [publication.permalink],
+    extractionConfidence: confidence,
+    sourcePublishedAt: publication.publishedAt,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
 export function reconcilePublication(
   username: string,
   publication: InstagramPublication,
@@ -90,10 +118,6 @@ export function reconcilePublication(
   const sourceId = sourceIdFor(username);
   const events: EventRecord[] = [];
   const issues: string[] = [];
-
-  if (captionResult.events.length === 0 && visionResult.events.length > 0) {
-    issues.push("vision found an event that the caption did not confirm");
-  }
 
   for (const candidate of captionResult.events) {
     const issue = candidateIssue(candidate, now);
@@ -118,25 +142,40 @@ export function reconcilePublication(
     const confidence = visualMatch
       ? (candidate.confidence + visualMatch.confidence) / 2
       : candidate.confidence * 0.9;
-    const timestamp = now.toISOString();
-    events.push({
-      eventId: eventIdFor(username, candidate.startsAt, candidate.name),
-      sourceId,
-      instagramAccount: username,
-      socialName: candidate.name.trim(),
-      nextSocialDate: candidate.startsAt,
-      endsAt: candidate.endsAt,
-      address: candidate.address.trim(),
-      status: "active",
-      attendants: 0,
-      timeApproximate: false,
-      sourceMediaIds: [publication.mediaId],
-      sourcePermalinks: [publication.permalink],
-      extractionConfidence: confidence,
-      sourcePublishedAt: publication.publishedAt,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    });
+    events.push(
+      eventFromCandidate(
+        username,
+        sourceId,
+        publication,
+        candidate,
+        confidence,
+        now,
+      ),
+    );
+  }
+
+  if (captionResult.events.length === 0) {
+    for (const candidate of visionResult.events) {
+      const issue = candidateIssue(candidate, now);
+      if (issue) {
+        issues.push(issue);
+        continue;
+      }
+      if (candidate.confidence < 0.9) {
+        issues.push(`vision confidence is too low for ${candidate.name}`);
+        continue;
+      }
+      events.push(
+        eventFromCandidate(
+          username,
+          sourceId,
+          publication,
+          candidate,
+          candidate.confidence,
+          now,
+        ),
+      );
+    }
   }
 
   const review =

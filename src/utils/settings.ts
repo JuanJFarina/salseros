@@ -46,6 +46,7 @@ export function getMetaSettings() {
     accessToken: requiredEnv("META_ACCESS_TOKEN"),
     igUserId: requiredEnv("META_IG_USER_ID"),
     graphVersion: process.env.META_GRAPH_VERSION?.trim() || "v26.0",
+    publicationLimit: positiveInteger("META_PUBLICATION_LIMIT", 6),
     timeoutMs: positiveInteger("EXTERNAL_REQUEST_TIMEOUT_MS", 15_000),
   };
 }
