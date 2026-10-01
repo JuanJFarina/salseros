@@ -6,9 +6,10 @@ type AttendanceResponse = {
   attendants: number;
 };
 
-type SourceRequestResponse = {
-  username: string;
-  outcome: "created" | "duplicate" | "already_active";
+type EventRequestResponse = {
+  outcome: "approved" | "pending" | "rejected" | "duplicate";
+  eventId: string | null;
+  socialName: string;
 };
 
 async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
@@ -40,12 +41,15 @@ export function updateAttendance(
   });
 }
 
-export function requestSource(
-  username: string,
-): Promise<SourceRequestResponse> {
-  return jsonRequest<SourceRequestResponse>("/api/source-requests", {
+export function requestEvent(input: {
+  date: string;
+  time: string;
+  place: string;
+  username: string;
+}): Promise<EventRequestResponse> {
+  return jsonRequest<EventRequestResponse>("/api/event-requests", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username }),
+    body: JSON.stringify(input),
   });
 }

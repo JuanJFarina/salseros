@@ -9,7 +9,8 @@
 - **Known later events:** Below the seven-day agenda, show a compact chronological list of non-recurring events already known beyond the public window with only date, event name, and Instagram link.
 - **Lightweight attendance:** Let a visitor toggle “¡Pa'llá voy!” without registering. Store the visitor's selection locally and update the shared count.
 - **Empty state:** Show a friendly message when the complete seven-day period has no events.
-- **Source request form:** Let a visitor submit one Instagram username at the bottom of the page. Store valid, non-duplicate requests as pending for manual review.
+- **Social submission form:** Let a visitor submit a specific event date, time, place, and Instagram username at the bottom of the page.
+- **Submission outcomes:** Publish submissions from known or newly validated salsa/bachata sources, keep inaccessible sources pending, and reject duplicates without creating another attendance count.
 - **Spanish-first interface:** Use concise Argentine Spanish and Rosario's local timezone.
 
 ## Event discovery
@@ -22,6 +23,9 @@
 - **Review queue:** Store disagreements, incomplete candidates, and invalid candidates in Google Sheets without publishing them.
 - **Duplicate consolidation:** Merge repeated announcements of the same account, local date, and event rather than creating duplicate events.
 - **Source provenance:** Retain publication IDs, permalinks, publication timestamps, and extraction freshness for every published event.
+- **Source admission:** Validate new professional accounts through Meta and classify their public profile information with Gemini before automatically adding them to `Sources`.
+- **Global username uniqueness:** A normalized Instagram username exists in `Sources` or `SourceRequests`, never both.
+- **Deterministic duplicate detection:** Compare local date, time proximity, normalized place, and source before accepting a submitted event.
 
 ### Initial validated sources
 
@@ -76,7 +80,7 @@ These occurrences are generated from application configuration and never scanned
 - Comments, chat, follows, notifications, or other social-network features.
 - Maps, routing, event search, and city expansion beyond Rosario.
 - Strong anti-fraud guarantees for attendance counts.
-- Automatic activation of requested Instagram accounts.
+- Automatic activation of inaccessible or semantically uncertain Instagram accounts.
 - Indefinite event, RSVP, extraction-review, or synchronization history.
 
 ## Possible later features

@@ -21,8 +21,8 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 
 ### Actors
 
-- **Visitor:** Reads the weekly agenda, toggles attendance intent, and requests an Instagram source.
-- **Operator:** Maintains spreadsheet data, approves source requests, reviews extraction conflicts, manages credentials, and configures the external scheduler.
+- **Visitor:** Reads the weekly agenda, toggles attendance intent, and submits a specific social event.
+- **Operator:** Maintains spreadsheet data, reviews pending sources and events, resolves extraction conflicts, manages credentials, and configures the external scheduler.
 - **External scheduler:** Calls the protected synchronization endpoint on the operator's schedule.
 - **Instagram organizer:** Publishes source content but does not interact directly with SalseRos.
 - **Meta Graph API:** Supplies professional-account publications and media metadata.
@@ -92,17 +92,22 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-26:** The button shall be disabled while its request is in flight.
 - **FR-27:** Attendance is explicitly best-effort. Clearing local storage, using another browser, or calling the endpoint manually can create another intent.
 
-### Source requests
+### Community event submissions
 
-- **FR-28:** The bottom of the page shall contain a compact source-request form with one Instagram username input.
-- **FR-29:** `POST /api/source-requests` shall normalize input by trimming whitespace, removing one leading `@`, and converting to lowercase.
+- **FR-28:** The bottom of the page shall accept one event date, local time, place, and Instagram username.
+- **FR-29:** `POST /api/event-requests` shall normalize usernames by trimming whitespace, removing one leading `@`, and converting to lowercase.
 - **FR-30:** A valid username shall contain only Instagram-supported letters, digits, periods, and underscores and shall not exceed 30 characters.
-- **FR-31:** The endpoint shall reject empty or malformed usernames.
-- **FR-32:** An already active source or pending request shall not create a duplicate row.
-- **FR-33:** A valid new request shall be appended to `SourceRequests` with `pending` status and a server timestamp.
-- **FR-34:** A submitted request shall never become an active source automatically.
-- **FR-35:** Approval consists of the operator adding the username to `Sources` and updating the request status in the spreadsheet.
-- **FR-36:** The UI shall not claim that submission guarantees inclusion.
+- **FR-31:** Date, time, place, and username are required; the resolved local start must be in the future.
+- **FR-32:** Duplicate detection shall compare local date, time proximity, normalized place, and source against existing events before source validation.
+- **FR-33:** A duplicate submission shall return the existing event and shall not create another event or attendance count.
+- **FR-34:** Events from an existing `Sources` username shall publish automatically after structural and duplicate validation.
+- **FR-35:** An unknown professional account shall be queried through Meta and classified by Gemini using its name, biography, and recent captions.
+- **FR-36:** A high-confidence salsa/bachata account shall be promoted to `Sources` and its event published automatically.
+- **FR-36a:** An inaccessible or semantically uncertain account and its event shall remain pending in `SourceRequests` and `EventRequests`.
+- **FR-36b:** A confidently unrelated account and its event shall be rejected with an operator-readable reason.
+- **FR-36c:** Marking a pending `EventRequests` row as approved shall cause the next synchronization to publish it and create a non-scanned Source when needed.
+- **FR-36d:** Event names shall derive from accessible Instagram profile information, falling back to the submitted place.
+- **FR-36e:** A normalized username shall exist in `Sources` or `SourceRequests`, never both.
 
 ### Synchronization endpoint
 
@@ -187,6 +192,7 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-92a:** Synchronization shall remove events 48 hours after their explicit end, or 48 hours after the six-hour inferred end used when no end is known.
 - **FR-92b:** Removing an event shall remove all of its RSVP rows.
 - **FR-92c:** Extraction reviews and synchronization runs shall be retained for at most 30 days.
+- **FR-92c1:** Pending event requests shall remain until reviewed; resolved event requests shall be retained for at most 30 days.
 - **FR-92d:** Sources and source-request decisions shall remain persistent.
 - **FR-92e:** RSVP toggles shall update or append the affected RSVP row and update only the affected event row.
 
@@ -215,7 +221,7 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 SalseRos shall be one Next.js App Router application deployed as a hybrid static/serverless project:
 
 - A statically renderable page shell and client event interaction component.
-- Route Handlers for event reads, RSVP writes, source requests, and synchronization.
+- Route Handlers for event reads, RSVP writes, event submissions, and synchronization.
 - Pure domain functions for calendar windows, normalization, reconciliation, identity, and grouping.
 - Server-only adapters for Meta, Gemini, public CSV reads, and authenticated Google Sheets writes.
 - Runtime validation at every external boundary.
@@ -227,7 +233,7 @@ The application shall not introduce a separate backend for the MVP.
 - `app/page.tsx`: public shell and metadata.
 - `app/api/events/route.ts`: validated public event feed.
 - `app/api/rsvps/route.ts`: attendance toggle.
-- `app/api/source-requests/route.ts`: pending source request.
+- `app/api/event-requests/route.ts`: validated community event submission.
 - `app/api/sync/route.ts`: protected orchestration endpoint.
 - `components/`: weekly agenda, event card, RSVP button, request form, states.
 - `domain/`: event models, date windows, identities, reconciliation, grouping.
@@ -245,10 +251,10 @@ The application shall not introduce a separate backend for the MVP.
   - Public.
   - Accepts `{ eventId, visitorToken, attending }`.
   - Returns `{ eventId, attending, attendants }`.
-- `POST /api/source-requests`
+- `POST /api/event-requests`
   - Public.
-  - Accepts `{ username }`.
-  - Returns a created, duplicate, or already-active outcome.
+  - Accepts `{ date, time, place, username }`.
+  - Returns an approved, pending, rejected, or duplicate outcome.
 - `GET /api/sync?key=…`
   - Protected by `SYNC_PASSWORD`.
   - Returns run and per-source outcomes.

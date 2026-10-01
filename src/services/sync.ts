@@ -5,14 +5,20 @@ import {
   mergeDuplicateEvents,
   reconcilePublication,
 } from "@/domain/reconciliation";
+import {
+  eventFromRequest,
+  findDuplicateEvent,
+  submissionStart,
+} from "@/domain/event-submissions";
+import { sourceIdFor, syncRunIdFor } from "@/domain/identity";
 import { upcomingRecurringEvents } from "@/domain/recurring-events";
 import type {
   EventRecord,
+  EventRequestRecord,
   ExtractionReviewRecord,
   SourceRecord,
   SyncRunRecord,
 } from "@/domain/models";
-import { syncRunIdFor } from "@/domain/identity";
 import { syncWindowKey } from "@/domain/sync-window";
 import {
   extractCaptionEvents,
@@ -48,8 +54,89 @@ export type SyncResponse = {
   sources: SourceSyncResult["outcome"][];
 };
 
+type ApprovedPromotions = {
+  events: EventRecord[];
+  sources: SourceRecord[];
+  requests: EventRequestRecord[];
+};
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown synchronization error";
+}
+
+function promoteApprovedRequests(
+  requests: EventRequestRecord[],
+  knownSources: SourceRecord[],
+  knownEvents: EventRecord[],
+  now: Date,
+): ApprovedPromotions {
+  const events: EventRecord[] = [];
+  const sources: SourceRecord[] = [];
+  const updates: EventRequestRecord[] = [];
+  const sourceNames = new Set(knownSources.map((source) => source.username));
+  const comparedEvents = [...knownEvents];
+
+  for (const request of requests) {
+    if (request.status !== "approved" || request.eventId) {
+      continue;
+    }
+    try {
+      const startsAt = submissionStart(
+        request.eventDate,
+        request.eventTime,
+        now,
+      );
+      const duplicate = findDuplicateEvent(
+        comparedEvents,
+        request.username,
+        startsAt,
+        request.place,
+      );
+      if (duplicate) {
+        updates.push({
+          ...request,
+          status: "duplicate",
+          eventId: duplicate.eventId,
+          reviewedAt: now.toISOString(),
+          reviewNote: "El evento ya estaba publicado.",
+        });
+        continue;
+      }
+
+      const event = eventFromRequest(request, now);
+      events.push(event);
+      comparedEvents.push(event);
+      updates.push({
+        ...request,
+        eventId: event.eventId,
+        reviewedAt: now.toISOString(),
+      });
+      if (!sourceNames.has(request.username)) {
+        const timestamp = now.toISOString();
+        sources.push({
+          sourceId: sourceIdFor(request.username),
+          username: request.username,
+          enabled: false,
+          lastSuccessfulWindow: null,
+          lastCheckedAt: null,
+          lastError:
+            "Fuente aprobada manualmente; escaneo de Meta deshabilitado.",
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        });
+        sourceNames.add(request.username);
+      }
+    } catch (error) {
+      updates.push({
+        ...request,
+        status: "rejected",
+        reviewedAt: now.toISOString(),
+        reviewNote: errorMessage(error),
+      });
+    }
+  }
+
+  return { events, sources, requests: updates };
 }
 
 async function syncSource(
@@ -198,7 +285,19 @@ export async function synchronizeSources(
   }
 
   const repository = getRepository();
-  const sources = await repository.listSources();
+  const [sources, allSources, eventRequests, existingEvents] =
+    await Promise.all([
+      repository.listSources(),
+      repository.listAllSources(),
+      repository.listEventRequests(),
+      repository.listEvents(),
+    ]);
+  const promotions = promoteApprovedRequests(
+    eventRequests,
+    allSources,
+    existingEvents,
+    now,
+  );
   const sourceLimit = pLimit(getSyncSettings().maxConcurrency);
   const geminiLimit = pLimit(getGeminiSettings().maxConcurrency);
   const results = await Promise.all(
@@ -212,11 +311,16 @@ export async function synchronizeSources(
   await repository.commitSync({
     events: [
       ...results.flatMap((result) => result.events),
+      ...promotions.events,
       ...upcomingRecurringEvents(now),
     ],
     reviews: results.flatMap((result) => result.reviews),
-    sources: results.map((result) => result.source),
+    sources: [
+      ...results.map((result) => result.source),
+      ...promotions.sources,
+    ],
     runs: results.map((result) => result.run),
+    eventRequests: promotions.requests,
   });
 
   const outcomes = results.map((result) => result.outcome);

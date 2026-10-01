@@ -3,19 +3,21 @@ import { parse } from "csv-parse/sync";
 
 import type {
   EventRecord,
+  EventRequestRecord,
   RsvpRecord,
   SourceRecord,
   SourceRequestRecord,
 } from "@/domain/models";
 import {
   retainEvents,
+  retainEventRequests,
   retainReviews,
   retainRsvps,
   retainRuns,
 } from "@/domain/retention";
 import type {
+  EventSubmissionCommit,
   SalseRosRepository,
-  SourceRequestOutcome,
   SyncCommit,
 } from "@/services/repository";
 import { AppError } from "@/utils/errors";
@@ -28,6 +30,8 @@ import {
 import { FixtureRepository } from "./fixture-repository";
 import {
   eventFromRow,
+  eventRequestFromRow,
+  eventRequestToRow,
   eventToRow,
   reviewFromRow,
   reviewToRow,
@@ -74,10 +78,28 @@ class GoogleSheetsRepository implements SalseRosRepository {
     return events;
   }
 
+  async listEvents(): Promise<EventRecord[]> {
+    return (await this.store.read("Events")).map(eventFromRow);
+  }
+
   async listSources(): Promise<SourceRecord[]> {
-    return (await this.store.read("Sources"))
-      .map(sourceFromRow)
-      .filter((source) => source.enabled);
+    return (await this.listAllSources()).filter((source) => source.enabled);
+  }
+
+  async listAllSources(): Promise<SourceRecord[]> {
+    return (await this.store.read("Sources")).map(sourceFromRow);
+  }
+
+  async listSourceRequests(): Promise<SourceRequestRecord[]> {
+    return (await this.store.read("SourceRequests")).map(
+      sourceRequestFromRow,
+    );
+  }
+
+  async listEventRequests(): Promise<EventRequestRecord[]> {
+    return (await this.store.read("EventRequests")).map(
+      eventRequestFromRow,
+    );
   }
 
   async toggleRsvp(
@@ -159,44 +181,67 @@ class GoogleSheetsRepository implements SalseRosRepository {
     return eventEntry.event.attendants;
   }
 
-  async requestSource(
-    request: SourceRequestRecord,
-  ): Promise<SourceRequestOutcome> {
-    const [sourceRows, requestRows] = await Promise.all([
-      this.store.read("Sources"),
-      this.store.read("SourceRequests"),
-    ]);
-    const sources = sourceRows.map(sourceFromRow);
-    const requests = requestRows.map(sourceRequestFromRow);
-    if (
-      sources.some(
-        (source) => source.enabled && source.username === request.username,
-      )
-    ) {
-      return "already_active";
-    }
-    if (
-      requests.some(
-        (candidate) =>
-          candidate.username === request.username &&
-          candidate.status === "pending",
-      )
-    ) {
-      return "duplicate";
-    }
+  async commitEventSubmission(
+    commit: EventSubmissionCommit,
+  ): Promise<void> {
+    const [eventRows, sourceRows, sourceRequestRows, eventRequestRows] =
+      await Promise.all([
+        this.store.read("Events"),
+        this.store.read("Sources"),
+        this.store.read("SourceRequests"),
+        this.store.read("EventRequests"),
+      ]);
+    const events = mergeEvents(
+      eventRows.map(eventFromRow),
+      commit.event ? [commit.event] : [],
+    );
+    const sources = mergeBy(
+      sourceRows.map(sourceFromRow),
+      commit.source ? [commit.source] : [],
+      (source) => source.sourceId,
+    );
+    const sourceRequests = mergeBy(
+      sourceRequestRows.map(sourceRequestFromRow),
+      commit.sourceRequest ? [commit.sourceRequest] : [],
+      (request) => request.requestId,
+    ).filter(
+      (request) =>
+        !sources.some((source) => source.username === request.username),
+    );
+    const eventRequests = retainEventRequests(
+      mergeBy(
+        eventRequestRows.map(eventRequestFromRow),
+        [commit.eventRequest],
+        (request) => request.eventRequestId,
+      ),
+    );
 
-    await this.store.append("SourceRequests", sourceRequestToRow(request));
-    return "created";
+    await this.store.replace({
+      Events: events.map(eventToRow),
+      Sources: sources.map(sourceToRow),
+      SourceRequests: sourceRequests.map(sourceRequestToRow),
+      EventRequests: eventRequests.map(eventRequestToRow),
+    });
   }
 
   async commitSync(commit: SyncCommit): Promise<void> {
-    const [eventRows, sourceRows, reviewRows, runRows, rsvpRows] =
+    const [
+      eventRows,
+      sourceRows,
+      reviewRows,
+      runRows,
+      rsvpRows,
+      sourceRequestRows,
+      eventRequestRows,
+    ] =
       await Promise.all([
       this.store.read("Events"),
       this.store.read("Sources"),
       this.store.read("ExtractionReviews"),
       this.store.read("SyncRuns"),
       this.store.read("RSVPs"),
+      this.store.read("SourceRequests"),
+      this.store.read("EventRequests"),
     ]);
     const now = new Date();
     const events = retainEvents(
@@ -208,6 +253,20 @@ class GoogleSheetsRepository implements SalseRosRepository {
       sourceRows.map(sourceFromRow),
       commit.sources,
       (source) => source.sourceId,
+    );
+    const sourceRequests = sourceRequestRows
+      .map(sourceRequestFromRow)
+      .filter(
+        (request) =>
+          !sources.some((source) => source.username === request.username),
+      );
+    const eventRequests = retainEventRequests(
+      mergeBy(
+        eventRequestRows.map(eventRequestFromRow),
+        commit.eventRequests ?? [],
+        (request) => request.eventRequestId,
+      ),
+      now,
     );
     const reviews = retainReviews(
       mergeBy(
@@ -230,6 +289,8 @@ class GoogleSheetsRepository implements SalseRosRepository {
       Events: events.map(eventToRow),
       RSVPs: rsvps.map(rsvpToRow),
       Sources: sources.map(sourceToRow),
+      SourceRequests: sourceRequests.map(sourceRequestToRow),
+      EventRequests: eventRequests.map(eventRequestToRow),
       ExtractionReviews: reviews.map(reviewToRow),
       SyncRuns: runs.map(runToRow),
     });

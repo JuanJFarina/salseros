@@ -41,6 +41,19 @@ const headers = {
     "reviewed_at",
     "review_note",
   ],
+  EventRequests: [
+    "event_request_id",
+    "username",
+    "social_name",
+    "event_date",
+    "event_time",
+    "place",
+    "status",
+    "event_id",
+    "requested_at",
+    "reviewed_at",
+    "review_note",
+  ],
   ExtractionReviews: [
     "review_id",
     "source_id",
@@ -116,10 +129,6 @@ const initialSourceDecisions = [
   {
     username: "salvaje_salsa.bachata",
     note: "Meta Business Discovery devolvió Invalid user id; la cuenta no es accesible mediante la API oficial.",
-  },
-  {
-    username: "sentimientotorito.rosario1",
-    note: "Cuenta omitida: anuncia sus sociales únicamente mediante Stories, que Business Discovery no permite consultar.",
   },
 ];
 

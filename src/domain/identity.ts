@@ -54,6 +54,21 @@ export function requestIdFor(username: string): string {
   return `req_${compactHash(normalizeInstagramUsername(username))}`;
 }
 
+export function eventRequestIdFor(
+  username: string,
+  date: string,
+  time: string,
+  place: string,
+): string {
+  const identity = [
+    normalizeInstagramUsername(username),
+    date,
+    time,
+    normalizeEventText(place),
+  ].join("|");
+  return `ereq_${compactHash(identity)}`;
+}
+
 export function syncRunIdFor(
   sourceId: string,
   windowKey: string,

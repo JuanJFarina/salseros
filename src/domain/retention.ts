@@ -2,6 +2,7 @@ import { addHours, subDays } from "date-fns";
 
 import type {
   EventRecord,
+  EventRequestRecord,
   ExtractionReviewRecord,
   RsvpRecord,
   SyncRunRecord,
@@ -51,6 +52,20 @@ export function retainRuns(
   const cutoff = subDays(now, 30).getTime();
   return runs.filter((run) => {
     const timestamp = Date.parse(run.startedAt);
+    return Number.isFinite(timestamp) && timestamp >= cutoff;
+  });
+}
+
+export function retainEventRequests(
+  requests: EventRequestRecord[],
+  now = new Date(),
+): EventRequestRecord[] {
+  const cutoff = subDays(now, 30).getTime();
+  return requests.filter((request) => {
+    if (request.status === "pending") {
+      return true;
+    }
+    const timestamp = Date.parse(request.reviewedAt ?? request.requestedAt);
     return Number.isFinite(timestamp) && timestamp >= cutoff;
   });
 }

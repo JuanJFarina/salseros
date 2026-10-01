@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import type {
   EventRecord,
+  EventRequestRecord,
   ExtractionReviewRecord,
   RsvpRecord,
   SyncRunRecord,
 } from "@/domain/models";
 import {
   retainEvents,
+  retainEventRequests,
   retainReviews,
   retainRsvps,
   retainRuns,
@@ -126,5 +128,36 @@ describe("bounded retention", () => {
         now,
       ).map((item) => item.syncRunId),
     ).toEqual(["current"]);
+  });
+
+  it("keeps pending event requests and recent resolved requests", () => {
+    const request = (
+      eventRequestId: string,
+      status: EventRequestRecord["status"],
+      requestedAt: string,
+    ): EventRequestRecord => ({
+      eventRequestId,
+      username: "source",
+      socialName: "Social",
+      eventDate: "2026-10-20",
+      eventTime: "22:00",
+      place: "Rosario",
+      status,
+      eventId: null,
+      requestedAt,
+      reviewedAt: status === "pending" ? null : requestedAt,
+      reviewNote: null,
+    });
+
+    expect(
+      retainEventRequests(
+        [
+          request("pending", "pending", "2026-08-01T12:00:00.000Z"),
+          request("old", "rejected", "2026-08-01T12:00:00.000Z"),
+          request("recent", "approved", "2026-10-01T12:00:00.000Z"),
+        ],
+        now,
+      ).map((item) => item.eventRequestId),
+    ).toEqual(["pending", "recent"]);
   });
 });

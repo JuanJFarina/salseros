@@ -8,6 +8,7 @@ import {
 } from "@/domain/identity";
 import type {
   EventRecord,
+  EventRequestRecord,
   ExtractionReviewRecord,
   RsvpRecord,
   SourceRecord,
@@ -15,8 +16,8 @@ import type {
   SyncRunRecord,
 } from "@/domain/models";
 import type {
+  EventSubmissionCommit,
   SalseRosRepository,
-  SourceRequestOutcome,
   SyncCommit,
 } from "@/services/repository";
 import { AppError } from "@/utils/errors";
@@ -99,6 +100,7 @@ let sources: SourceRecord[] = usernames.map((username) => ({
 }));
 const rsvps: RsvpRecord[] = [];
 const requests: SourceRequestRecord[] = [];
+let eventRequests: EventRequestRecord[] = [];
 let reviews: ExtractionReviewRecord[] = [];
 let runs: SyncRunRecord[] = [];
 
@@ -107,8 +109,24 @@ export class FixtureRepository implements SalseRosRepository {
     return structuredClone(events);
   }
 
+  async listEvents(): Promise<EventRecord[]> {
+    return structuredClone(events);
+  }
+
   async listSources(): Promise<SourceRecord[]> {
     return structuredClone(sources);
+  }
+
+  async listAllSources(): Promise<SourceRecord[]> {
+    return structuredClone(sources);
+  }
+
+  async listSourceRequests(): Promise<SourceRequestRecord[]> {
+    return structuredClone(requests);
+  }
+
+  async listEventRequests(): Promise<EventRequestRecord[]> {
+    return structuredClone(eventRequests);
   }
 
   async toggleRsvp(
@@ -141,17 +159,37 @@ export class FixtureRepository implements SalseRosRepository {
     return event.attendants;
   }
 
-  async requestSource(
-    request: SourceRequestRecord,
-  ): Promise<SourceRequestOutcome> {
-    if (sources.some((source) => source.username === request.username)) {
-      return "already_active";
+  async commitEventSubmission(commit: EventSubmissionCommit): Promise<void> {
+    eventRequests = mergeBy(
+      eventRequests,
+      [commit.eventRequest],
+      (request) => request.eventRequestId,
+    );
+    if (commit.event) {
+      events = mergeBy(events, [commit.event], (event) => event.eventId);
     }
-    if (requests.some((candidate) => candidate.username === request.username)) {
-      return "duplicate";
+    if (commit.source) {
+      sources = mergeBy(
+        sources,
+        [commit.source],
+        (source) => source.sourceId,
+      );
+      const requestIndex = requests.findIndex(
+        (request) => request.username === commit.source?.username,
+      );
+      if (requestIndex >= 0) {
+        requests.splice(requestIndex, 1);
+      }
+    } else if (commit.sourceRequest) {
+      const existingIndex = requests.findIndex(
+        (request) => request.username === commit.sourceRequest?.username,
+      );
+      if (existingIndex >= 0) {
+        requests[existingIndex] = commit.sourceRequest;
+      } else {
+        requests.push(commit.sourceRequest);
+      }
     }
-    requests.push(request);
-    return "created";
   }
 
   async commitSync(commit: SyncCommit): Promise<void> {
@@ -163,6 +201,17 @@ export class FixtureRepository implements SalseRosRepository {
       (review) => review.reviewId,
     );
     runs = mergeBy(runs, commit.runs, (run) => run.syncRunId);
+    eventRequests = mergeBy(
+      eventRequests,
+      commit.eventRequests ?? [],
+      (request) => request.eventRequestId,
+    );
+    const sourceNames = new Set(sources.map((source) => source.username));
+    for (let index = requests.length - 1; index >= 0; index -= 1) {
+      if (sourceNames.has(requests[index].username)) {
+        requests.splice(index, 1);
+      }
+    }
   }
 }
 

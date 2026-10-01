@@ -32,6 +32,7 @@ The spreadsheet contains:
 - `Events`: normalized event records and denormalized attendance counts.
 - `RSVPs`: one pseudonymous current state per event/browser combination.
 - `SourceRequests`: pending visitor suggestions.
+- `EventRequests`: structured event submissions and their admission outcome.
 - `ExtractionReviews`: conflicting or incomplete extraction evidence.
 - `SyncRuns`: idempotency windows and run outcomes.
 
@@ -93,9 +94,9 @@ Deliver:
 
 - Local browser identity and “¡Pa'llá voy!” toggle.
 - RSVP persistence and attendance count update.
-- Instagram source-request form with normalization and deduplication.
+- Structured social-event form with source admission, semantic classification, and cross-source duplicate detection.
 
-Done when attendance can be selected and undone after reload, and pending source requests appear once in Sheets.
+Done when attendance can be selected and undone after reload, known sources publish valid submissions, and inaccessible sources remain pending without duplicate rows.
 
 ### Phase 4: Synchronization
 

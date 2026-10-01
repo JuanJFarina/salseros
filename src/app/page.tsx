@@ -1,6 +1,6 @@
 import { MapPin, Music2, Sparkles } from "lucide-react";
 
-import { SourceRequestForm } from "@/components/source-request-form";
+import { EventRequestForm } from "@/components/event-request-form";
 import { WeeklyAgenda } from "@/components/weekly-agenda";
 
 export default function Home() {
@@ -42,7 +42,7 @@ export default function Home() {
         </section>
 
         <WeeklyAgenda />
-        <SourceRequestForm />
+        <EventRequestForm />
       </main>
 
       <footer className="site-footer">

@@ -9,6 +9,8 @@ erDiagram
     SOURCE ||--o{ SYNC_RUN : inspected_by
     EVENT ||--o{ RSVP : receives
     SOURCE_REQUEST o|--o| SOURCE : may_become
+    SOURCE_REQUEST o|--o{ EVENT_REQUEST : accompanies
+    EVENT_REQUEST o|--o| EVENT : may_create
 
     SOURCE {
         string source_id PK
@@ -57,6 +59,20 @@ erDiagram
         string review_note
     }
 
+    EVENT_REQUEST {
+        string event_request_id PK
+        string username
+        string social_name
+        date event_date
+        string event_time
+        string place
+        string status
+        string event_id FK
+        datetime requested_at
+        datetime reviewed_at
+        string review_note
+    }
+
     EXTRACTION_REVIEW {
         string review_id PK
         string source_id FK
@@ -92,7 +108,9 @@ erDiagram
 | Event | RSVP | One to many | Each row is the current anonymous state for one event/browser-derived identifier. |
 | Source | ExtractionReview | One to many | Conflicting or incomplete candidates remain associated with their source publication. |
 | Source | SyncRun | One to many | A source has one current record per synchronization window, updated by retries. |
-| SourceRequest | Source | Optional one to optional one | A pending request only becomes related after manual operator approval. |
+| SourceRequest | Source | Optional one to optional one | A validated request is removed when its username is promoted to Sources. |
+| SourceRequest | EventRequest | Optional one to many | Unknown or inaccessible accounts can accompany one or more pending event submissions. |
+| EventRequest | Event | Optional one to optional one | Approved submissions resolve to one deterministic event. |
 
 ## Entity semantics
 
@@ -126,10 +144,18 @@ erDiagram
 
 ### Source requests
 
-- The public form stores only a normalized Instagram username.
+- Rows are created only when an event submission references an unknown source.
 - `status` is `pending`, `approved`, or `rejected`.
-- Approval is manual: the operator creates or enables a Sources row and updates the request.
+- High-confidence professional salsa/bachata accounts are promoted automatically and removed from this tab.
 - `review_note` is optional operational text and must not contain requester identity.
+
+### Event requests
+
+- `event_request_id` is derived from normalized username, date, time, and place.
+- `status` is `pending`, `approved`, `rejected`, or `duplicate`.
+- `social_name` is derived from Instagram profile data and falls back to place.
+- An operator can approve a pending row directly in Sheets; synchronization then creates the event.
+- `event_id` is populated after automatic or operator approval.
 
 ### Extraction reviews
 
@@ -150,13 +176,16 @@ erDiagram
 - Events are removed 48 hours after their explicit or inferred end.
 - RSVP rows are removed with their event.
 - Extraction reviews and synchronization runs are retained for 30 days.
+- Pending event requests remain until reviewed; resolved event requests are retained for 30 days.
 - Sources and source-request decisions are not automatically removed.
 - Future events are retained even when they fall outside the public seven-day display window.
 
 ## Constraints
 
 - Source username is unique after lowercase normalization and removal of `@`.
+- A normalized username cannot exist simultaneously in Sources and SourceRequests.
 - Event ID is unique.
+- Event request ID is unique.
 - RSVP ID is unique.
 - A pending source request is unique by normalized username.
 - A source has at most one successful outcome for a synchronization window.

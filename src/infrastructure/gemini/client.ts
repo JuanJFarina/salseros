@@ -2,6 +2,7 @@ import { GoogleGenAI, type ContentListUnion } from "@google/genai";
 import { z } from "zod";
 
 import type { ExtractionResult } from "@/domain/models";
+import type { SourceProfile } from "@/infrastructure/meta/client";
 import type { VisionAsset } from "@/infrastructure/meta/media";
 import { ExternalServiceError } from "@/utils/errors";
 import { getGeminiSettings } from "@/utils/settings";
@@ -17,6 +18,12 @@ const candidateSchema = z.object({
 
 const extractionSchema = z.object({
   events: z.array(candidateSchema),
+});
+
+const sourceClassificationSchema = z.object({
+  relevant: z.boolean(),
+  confidence: z.number().min(0).max(1),
+  reason: z.string(),
 });
 
 const responseJsonSchema = {
@@ -48,6 +55,17 @@ const responseJsonSchema = {
     },
   },
   required: ["events"],
+};
+
+const sourceClassificationJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    relevant: { type: "boolean" },
+    confidence: { type: "number", minimum: 0, maximum: 1 },
+    reason: { type: "string" },
+  },
+  required: ["relevant", "confidence", "reason"],
 };
 
 let client: GoogleGenAI | null = null;
@@ -144,4 +162,28 @@ export async function extractVisionEvents(
       ],
     },
   ]);
+}
+
+export async function classifyDanceSource(profile: SourceProfile) {
+  const { model } = getGeminiSettings();
+  const response = await geminiClient().models.generateContent({
+    model,
+    contents: [
+      "Classify whether this Instagram account is likely to organize or promote in-person salsa or bachata social-dancing events.",
+      "Dance schools are relevant only when their information indicates socials or parties, not classes alone.",
+      `Username: ${profile.username}`,
+      `Name: ${profile.name}`,
+      `Biography: ${profile.biography || "(empty)"}`,
+      `Recent captions:\n${profile.recentCaptions.join("\n---\n") || "(none)"}`,
+    ].join("\n"),
+    config: {
+      responseMimeType: "application/json",
+      responseJsonSchema: sourceClassificationJsonSchema,
+      temperature: 0,
+    },
+  });
+  if (!response.text) {
+    throw new ExternalServiceError("Gemini", "Source classification failed");
+  }
+  return sourceClassificationSchema.parse(JSON.parse(response.text));
 }

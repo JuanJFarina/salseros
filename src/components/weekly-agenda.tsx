@@ -97,6 +97,13 @@ export function WeeklyAgenda() {
     };
   }, []);
 
+  useEffect(() => {
+    const refresh = () => void loadAgenda();
+    window.addEventListener("salseros:agenda-updated", refresh);
+    return () =>
+      window.removeEventListener("salseros:agenda-updated", refresh);
+  }, [loadAgenda]);
+
   async function toggle(eventId: string, currentCount: number) {
     if (pending.has(eventId)) {
       return;

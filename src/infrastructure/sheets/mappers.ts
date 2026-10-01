@@ -1,5 +1,6 @@
 import type {
   EventRecord,
+  EventRequestRecord,
   ExtractionReviewRecord,
   RsvpRecord,
   SourceRecord,
@@ -149,6 +150,44 @@ export function sourceRequestToRow(request: SourceRequestRecord): SheetRow {
     request_id: request.requestId,
     username: request.username,
     status: request.status,
+    requested_at: request.requestedAt,
+    reviewed_at: request.reviewedAt ?? "",
+    review_note: request.reviewNote ?? "",
+  };
+}
+
+export function eventRequestFromRow(row: SheetRow): EventRequestRecord {
+  const status =
+    row.status === "approved" ||
+    row.status === "rejected" ||
+    row.status === "duplicate"
+      ? row.status
+      : "pending";
+  return {
+    eventRequestId: required(row, "event_request_id"),
+    username: required(row, "username"),
+    socialName: required(row, "social_name"),
+    eventDate: required(row, "event_date"),
+    eventTime: required(row, "event_time"),
+    place: required(row, "place"),
+    status,
+    eventId: optional(row.event_id),
+    requestedAt: required(row, "requested_at"),
+    reviewedAt: optional(row.reviewed_at),
+    reviewNote: optional(row.review_note),
+  };
+}
+
+export function eventRequestToRow(request: EventRequestRecord): SheetRow {
+  return {
+    event_request_id: request.eventRequestId,
+    username: request.username,
+    social_name: request.socialName,
+    event_date: request.eventDate,
+    event_time: request.eventTime,
+    place: request.place,
+    status: request.status,
+    event_id: request.eventId ?? "",
     requested_at: request.requestedAt,
     reviewed_at: request.reviewedAt ?? "",
     review_note: request.reviewNote ?? "",

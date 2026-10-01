@@ -87,6 +87,26 @@ export type SourceRequestRecord = {
   reviewNote: string | null;
 };
 
+export type EventRequestStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "duplicate";
+
+export type EventRequestRecord = {
+  eventRequestId: string;
+  username: string;
+  socialName: string;
+  eventDate: string;
+  eventTime: string;
+  place: string;
+  status: EventRequestStatus;
+  eventId: string | null;
+  requestedAt: string;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+};
+
 export type ExtractionCandidate = {
   name: string;
   startsAt: string;
@@ -134,6 +154,9 @@ export const rsvpInputSchema = z.object({
   attending: z.boolean(),
 });
 
-export const sourceRequestInputSchema = z.object({
+export const eventRequestInputSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
+  place: z.string().trim().min(2).max(160),
   username: z.string().trim().min(1).max(64),
 });

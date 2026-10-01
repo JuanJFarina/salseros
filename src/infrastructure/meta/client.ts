@@ -43,6 +43,32 @@ const debugSchema = z.object({
   }),
 });
 
+const sourceProfileSchema = z.object({
+  business_discovery: z.object({
+    id: z.string(),
+    username: z.string(),
+    name: z.string().optional(),
+    biography: z.string().optional(),
+    media: z
+      .object({
+        data: z.array(
+          z.object({
+            caption: z.string().optional(),
+          }),
+        ),
+      })
+      .optional(),
+  }),
+});
+
+export type SourceProfile = {
+  id: string;
+  username: string;
+  name: string;
+  biography: string;
+  recentCaptions: string[];
+};
+
 function visualUrls(media: z.infer<typeof mediaSchema>): string[] {
   if (media.media_type === "IMAGE") {
     return media.media_url ? [media.media_url] : [];
@@ -99,6 +125,41 @@ export async function fetchRecentPublications(
     publishedAt: media.timestamp,
     visualUrls: visualUrls(media),
   }));
+}
+
+export async function fetchSourceProfile(
+  username: string,
+): Promise<SourceProfile | null> {
+  const { graphVersion, igUserId } = getMetaSettings();
+  const fields =
+    `business_discovery.username(${username})` +
+    "{id,username,name,biography,media.limit(3){caption}}";
+  const url = new URL(
+    `https://graph.facebook.com/${graphVersion}/${igUserId}`,
+  );
+  url.searchParams.set("fields", fields);
+
+  try {
+    const result = sourceProfileSchema.parse(await metaRequest(url));
+    const profile = result.business_discovery;
+    return {
+      id: profile.id,
+      username: profile.username,
+      name: profile.name?.trim() || profile.username,
+      biography: profile.biography?.trim() || "",
+      recentCaptions: (profile.media?.data ?? [])
+        .map((media) => media.caption?.trim())
+        .filter((caption): caption is string => Boolean(caption)),
+    };
+  } catch (error) {
+    if (
+      error instanceof ExternalServiceError &&
+      /Invalid user id|Unsupported get request/i.test(error.message)
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function inspectMetaToken(now = new Date()) {
