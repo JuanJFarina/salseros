@@ -81,16 +81,17 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 ### Attendance intent
 
 - **FR-17:** The browser shall create one random visitor token and store it under a versioned local-storage key.
-- **FR-18:** The browser shall store selected event IDs locally and render the corresponding buttons as selected after reload.
+- **FR-18:** The browser shall store selected event IDs locally only after server confirmation and render the corresponding buttons as selected after reload.
 - **FR-19:** Selecting or deselecting “¡Pa'llá voy!” shall call `POST /api/rsvps` with the event ID, visitor token, and desired boolean state.
 - **FR-20:** The server shall never persist the raw visitor token.
 - **FR-21:** The server shall derive an RSVP identifier with HMAC over the event ID and visitor token using `RSVP_HASH_SECRET`.
 - **FR-22:** One derived RSVP identifier shall represent at most one current state for an event.
 - **FR-23:** The handler shall update the RSVP state and recalculate the event's denormalized `attendants` count.
 - **FR-24:** Counts shall never be returned below zero.
-- **FR-25:** The client may update optimistically but shall restore the prior state when persistence fails.
-- **FR-26:** The button shall be disabled while its request is in flight.
+- **FR-25:** The client shall keep the prior selection and count until persistence succeeds.
+- **FR-26:** The button shall lock synchronously on the first click, remain disabled while its request is in flight, and ignore additional clicks until completion.
 - **FR-27:** Attendance is explicitly best-effort. Clearing local storage, using another browser, or calling the endpoint manually can create another intent.
+- **FR-27a:** The agenda heading shall state that voting is completely anonymous.
 
 ### Community event submissions
 
@@ -102,7 +103,7 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-33:** A duplicate submission shall return the existing event and shall not create another event or attendance count.
 - **FR-34:** Events from an existing `Sources` username shall publish automatically after structural and duplicate validation.
 - **FR-35:** An unknown professional account shall be queried through Meta and classified by Gemini using its name, biography, and recent captions.
-- **FR-36:** A high-confidence salsa/bachata account shall be promoted to `Sources` and its event published automatically.
+- **FR-36:** A high-confidence salsa/bachata account or salsa/bachata dance school shall be promoted to `Sources` and its submitted event published automatically.
 - **FR-36a:** An inaccessible or semantically uncertain account and its event shall remain pending in `SourceRequests` and `EventRequests`.
 - **FR-36b:** A confidently unrelated account and its event shall be rejected with an operator-readable reason.
 - **FR-36c:** Marking a pending `EventRequests` row as approved shall cause the next synchronization to publish it and create a non-scanned Source when needed.
@@ -137,6 +138,7 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-52c:** `salsipuedesrosario` shall generate Fridays at approximately 21:00 at Mercado del Patio.
 - **FR-52d:** Both recurring sources shall remain disabled for Meta scanning.
 - **FR-52e:** Generated occurrences shall use deterministic event IDs so attendance survives repeated synchronization.
+- **FR-52f:** Recurring event cards shall display a small “recurrente” label beside the time.
 
 ### Instagram retrieval
 

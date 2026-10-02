@@ -103,7 +103,7 @@ export async function submitCommunityEvent(
   const repeatedRequest = eventRequests.find(
     (request) => request.eventRequestId === eventRequestId,
   );
-  if (repeatedRequest) {
+  if (repeatedRequest && repeatedRequest.status !== "rejected") {
     return {
       outcome: repeatedRequest.status,
       eventId: repeatedRequest.eventId,
@@ -206,7 +206,10 @@ export async function submitCommunityEvent(
   }
 
   const classification = await classifyDanceSource(profile);
-  if (classification.relevant && classification.confidence >= 0.8) {
+  if (
+    (classification.relevant || classification.danceSchool) &&
+    classification.confidence >= 0.8
+  ) {
     const timestamp = now.toISOString();
     const source: SourceRecord = {
       sourceId: sourceIdFor(username),
@@ -243,7 +246,9 @@ export async function submitCommunityEvent(
   }
 
   const rejected =
-    !classification.relevant && classification.confidence >= 0.8;
+    !classification.relevant &&
+    !classification.danceSchool &&
+    classification.confidence >= 0.8;
   const status = rejected ? "rejected" : "pending";
   const request = eventRequest(
     input,

@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { EventsResponse } from "@/domain/models";
 import {
@@ -59,6 +59,7 @@ export function WeeklyAgenda() {
     typeof window === "undefined" ? new Set() : savedSelections(),
   );
   const [pending, setPending] = useState<Set<string>>(new Set());
+  const pendingRef = useRef<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -104,32 +105,15 @@ export function WeeklyAgenda() {
       window.removeEventListener("salseros:agenda-updated", refresh);
   }, [loadAgenda]);
 
-  async function toggle(eventId: string, currentCount: number) {
-    if (pending.has(eventId)) {
+  async function toggle(eventId: string) {
+    if (pendingRef.current.has(eventId)) {
       return;
     }
 
-    const attending = !selected.has(eventId);
-    const previousSelected = new Set(selected);
-    const nextSelected = new Set(selected);
-    if (attending) {
-      nextSelected.add(eventId);
-    } else {
-      nextSelected.delete(eventId);
-    }
-    setSelected(nextSelected);
-    localStorage.setItem(RSVP_KEY, JSON.stringify([...nextSelected]));
+    pendingRef.current.add(eventId);
     setPending((current) => new Set(current).add(eventId));
+    const attending = !selected.has(eventId);
     setNotice(null);
-    setAgenda((current) =>
-      current
-        ? withAttendeeCount(
-            current,
-            eventId,
-            Math.max(0, currentCount + (attending ? 1 : -1)),
-          )
-        : current,
-    );
 
     try {
       const response = await updateAttendance(
@@ -137,25 +121,29 @@ export function WeeklyAgenda() {
         visitorToken(),
         attending,
       );
+      setSelected((current) => {
+        const updated = new Set(current);
+        if (attending) {
+          updated.add(eventId);
+        } else {
+          updated.delete(eventId);
+        }
+        localStorage.setItem(RSVP_KEY, JSON.stringify([...updated]));
+        return updated;
+      });
       setAgenda((current) =>
         current
           ? withAttendeeCount(current, eventId, response.attendants)
           : current,
       );
     } catch (toggleError) {
-      setSelected(previousSelected);
-      localStorage.setItem(RSVP_KEY, JSON.stringify([...previousSelected]));
-      setAgenda((current) =>
-        current
-          ? withAttendeeCount(current, eventId, currentCount)
-          : current,
-      );
       setNotice(
         toggleError instanceof Error
           ? toggleError.message
           : "No pudimos guardar tu elección.",
       );
     } finally {
+      pendingRef.current.delete(eventId);
       setPending((current) => {
         const updated = new Set(current);
         updated.delete(eventId);
@@ -205,6 +193,9 @@ export function WeeklyAgenda() {
         <div className="section-heading">
           <p className="eyebrow">Próximos 7 días</p>
           <h2 id="agenda-title">¿Dónde bailamos?</h2>
+          <p className="agenda__anonymous">
+            Tu voto es completamente anónimo.
+          </p>
         </div>
 
         {notice ? (
@@ -227,9 +218,7 @@ export function WeeklyAgenda() {
                     event={event}
                     selected={selected.has(event.eventId)}
                     pending={pending.has(event.eventId)}
-                    onToggle={() =>
-                      void toggle(event.eventId, event.attendants)
-                    }
+                    onToggle={() => void toggle(event.eventId)}
                   />
                 ))}
               </div>

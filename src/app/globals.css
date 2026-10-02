@@ -219,6 +219,12 @@ main {
   line-height: 0.95;
 }
 
+.agenda__anonymous {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+}
+
 .agenda {
   padding: 72px 0 80px;
   border-top: 1px solid var(--line);
@@ -337,6 +343,16 @@ main {
 .event-card__details svg {
   flex: 0 0 auto;
   color: var(--coral);
+}
+
+.recurring-label {
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--teal);
+  background: rgb(40 124 107 / 9%);
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .event-card__action {

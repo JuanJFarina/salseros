@@ -22,6 +22,7 @@ const extractionSchema = z.object({
 
 const sourceClassificationSchema = z.object({
   relevant: z.boolean(),
+  danceSchool: z.boolean(),
   confidence: z.number().min(0).max(1),
   reason: z.string(),
 });
@@ -62,10 +63,11 @@ const sourceClassificationJsonSchema = {
   additionalProperties: false,
   properties: {
     relevant: { type: "boolean" },
+    danceSchool: { type: "boolean" },
     confidence: { type: "number", minimum: 0, maximum: 1 },
     reason: { type: "string" },
   },
-  required: ["relevant", "confidence", "reason"],
+  required: ["relevant", "danceSchool", "confidence", "reason"],
 };
 
 let client: GoogleGenAI | null = null;
@@ -170,7 +172,8 @@ export async function classifyDanceSource(profile: SourceProfile) {
     model,
     contents: [
       "Classify whether this Instagram account is likely to organize or promote in-person salsa or bachata social-dancing events.",
-      "Dance schools are relevant only when their information indicates socials or parties, not classes alone.",
+      "Also identify whether it is clearly a salsa or bachata dance school.",
+      "A dance school is an acceptable source even when its public profile mainly promotes classes, because a user supplied the structured event details.",
       `Username: ${profile.username}`,
       `Name: ${profile.name}`,
       `Biography: ${profile.biography || "(empty)"}`,

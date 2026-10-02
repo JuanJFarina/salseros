@@ -7,7 +7,7 @@
 - **Multiple events per day:** Present events from the same day in one responsive row, wrapping or stacking on narrow screens.
 - **Focused event cards:** Show the event name prominently, followed by start time, address, attendance count, and source link.
 - **Known later events:** Below the seven-day agenda, show a compact chronological list of non-recurring events already known beyond the public window with only date, event name, and Instagram link.
-- **Lightweight attendance:** Let a visitor toggle “¡Pa'llá voy!” without registering. Store the visitor's selection locally and update the shared count.
+- **Lightweight attendance:** Let a visitor toggle “¡Pa'llá voy!” without registering. Lock the button immediately during persistence, store the confirmed selection locally, update the shared count, and state that voting is anonymous.
 - **Empty state:** Show a friendly message when the complete seven-day period has no events.
 - **Social submission form:** Let a visitor submit a specific event date, time, place, and Instagram username at the bottom of the page.
 - **Submission outcomes:** Publish submissions from known or newly validated salsa/bachata sources, keep inaccessible sources pending, and reject duplicates without creating another attendance count.
@@ -23,7 +23,7 @@
 - **Review queue:** Store disagreements, incomplete candidates, and invalid candidates in Google Sheets without publishing them.
 - **Duplicate consolidation:** Merge repeated announcements of the same account, local date, and event rather than creating duplicate events.
 - **Source provenance:** Retain publication IDs, permalinks, publication timestamps, and extraction freshness for every published event.
-- **Source admission:** Validate new professional accounts through Meta and classify their public profile information with Gemini before automatically adding them to `Sources`.
+- **Source admission:** Validate new professional accounts through Meta and classify their public profile information with Gemini before automatically adding them to `Sources`. Salsa/bachata schools are accepted even when their profile mainly promotes classes, because the submitted event data is structured.
 - **Global username uniqueness:** A normalized Instagram username exists in `Sources` or `SourceRequests`, never both.
 - **Deterministic duplicate detection:** Compare local date, time proximity, normalized place, and source before accepting a submitted event.
 

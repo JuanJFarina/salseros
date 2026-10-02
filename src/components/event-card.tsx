@@ -33,6 +33,10 @@ export function EventCard({
   pending,
   onToggle,
 }: EventCardProps) {
+  const recurring = event.sourceMediaIds.some((mediaId) =>
+    mediaId.startsWith("recurring:"),
+  );
+
   return (
     <article className="event-card">
       <div className="event-card__source">
@@ -53,6 +57,9 @@ export function EventCard({
         <p>
           <Clock3 size={17} aria-hidden="true" />
           <span>{eventTime(event)}</span>
+          {recurring ? (
+            <small className="recurring-label">(recurrente)</small>
+          ) : null}
         </p>
         <p>
           <MapPin size={17} aria-hidden="true" />
@@ -69,7 +76,13 @@ export function EventCard({
           disabled={pending}
           onClick={onToggle}
         >
-          <span>{selected ? "¡Nos vemos ahí!" : "¡Pa'llá voy!"}</span>
+          <span>
+            {pending
+              ? "Guardando…"
+              : selected
+                ? "¡Nos vemos ahí!"
+                : "¡Pa'llá voy!"}
+          </span>
         </button>
         <span className="attendee-count" aria-live="polite">
           <UsersRound size={16} aria-hidden="true" />
