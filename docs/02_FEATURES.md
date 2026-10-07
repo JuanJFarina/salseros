@@ -55,6 +55,7 @@ Business Discovery returned `Invalid user id` for the unavailable candidates on 
 
 - `@sentimientotorito.rosario1`: Sundays at approximately 16:00, at Mitre and the river.
 - `@salsipuedesrosario`: Fridays at approximately 21:00, at Mercado del Patio.
+- `@djzpaloma`: Wednesdays at approximately 21:30, at Mitre 1024.
 
 These occurrences are generated from application configuration and never scanned through Meta. Their cards identify the time as approximate.
 

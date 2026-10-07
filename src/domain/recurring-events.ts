@@ -9,6 +9,7 @@ type RecurringEvent = {
   name: string;
   weekday: number;
   hour: number;
+  minute: number;
   address: string;
 };
 
@@ -18,6 +19,7 @@ export const recurringEventSources: RecurringEvent[] = [
     name: "Sentimiento Torito",
     weekday: 0,
     hour: 16,
+    minute: 0,
     address: "Mitre y el Río",
   },
   {
@@ -25,7 +27,16 @@ export const recurringEventSources: RecurringEvent[] = [
     name: "Salsipuedes",
     weekday: 5,
     hour: 21,
+    minute: 0,
     address: "Mercado del Patio",
+  },
+  {
+    username: "djzpaloma",
+    name: "Melao",
+    weekday: 3,
+    hour: 21,
+    minute: 30,
+    address: "Mitre 1024",
   },
 ];
 
@@ -44,7 +55,7 @@ export function upcomingRecurringEvents(
         continue;
       }
       const localStart = new Date(localDate);
-      localStart.setHours(template.hour, 0, 0, 0);
+      localStart.setHours(template.hour, template.minute, 0, 0);
       const startsAt = fromZonedTime(
         localStart,
         ROSARIO_TIME_ZONE,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { upcomingRecurringEvents } from "@/domain/recurring-events";
 
 describe("upcomingRecurringEvents", () => {
-  it("generates Friday and Sunday occurrences in Rosario time", () => {
+  it("generates Wednesday, Friday, and Sunday occurrences in Rosario time", () => {
     const events = upcomingRecurringEvents(
       new Date("2026-10-01T15:00:00.000Z"),
       7,
@@ -24,6 +24,11 @@ describe("upcomingRecurringEvents", () => {
       {
         name: "Sentimiento Torito",
         startsAt: "2026-10-04T19:00:00.000Z",
+        approximate: true,
+      },
+      {
+        name: "Melao",
+        startsAt: "2026-10-08T00:30:00.000Z",
         approximate: true,
       },
     ]);

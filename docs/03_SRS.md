@@ -136,7 +136,8 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-52a:** Synchronization shall generate the next 14 days of configured recurring occurrences independently of Meta.
 - **FR-52b:** `sentimientotorito.rosario1` shall generate Sundays at approximately 16:00 at Mitre and the river.
 - **FR-52c:** `salsipuedesrosario` shall generate Fridays at approximately 21:00 at Mercado del Patio.
-- **FR-52d:** Both recurring sources shall remain disabled for Meta scanning.
+- **FR-52c1:** `djzpaloma` shall generate Wednesdays at approximately 21:30 at Mitre 1024.
+- **FR-52d:** All recurring sources shall remain disabled for Meta scanning.
 - **FR-52e:** Generated occurrences shall use deterministic event IDs so attendance survives repeated synchronization.
 - **FR-52f:** Recurring event cards shall display a small “recurrente” label beside the time.
 
