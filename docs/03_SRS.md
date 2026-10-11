@@ -158,15 +158,16 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-62:** Gemini caption extraction shall receive caption text and publication timestamp but no visual bytes.
 - **FR-63:** Gemini vision extraction shall receive visual bytes and a narrow extraction prompt without the caption, preserving independence as a cross-check.
 - **FR-64:** Both paths shall return schema-validated arrays because one publication can announce zero, one, or multiple events.
-- **FR-65:** Candidate fields shall include event name, local start, optional end, address, evidence, and extraction confidence.
+- **FR-65:** Candidate fields shall include event name, local start, optional end, address, evidence, event type, participatory-social indicator, and extraction confidence.
 - **FR-66:** Gemini shall use native structured JSON output when supported; arbitrary prose or invalid JSON shall not be accepted.
 - **FR-67:** The resolver shall normalize whitespace, casing, dates, times, and common address abbreviations before comparison.
 - **FR-68:** A missing year shall be inferred as the nearest plausible non-past occurrence relative to the publication timestamp and Rosario timezone.
 - **FR-69:** Day-of-week text shall agree with the resolved date when both are present.
-- **FR-70:** A candidate requires a name, future local start, and address before automatic publication.
-- **FR-71:** Caption and vision agreement on date, time, and venue shall produce a high-confidence candidate even when their event-name wording differs.
+- **FR-70:** A candidate requires a name, future local start, address, and classification as a participatory social before automatic publication.
+- **FR-70a:** Classes, workshops, performances, student showcases, and competitions shall not publish unless their evidence explicitly advertises a social-dancing floor for attendees.
+- **FR-71:** Caption and vision agreement on date, time, venue, and participatory-social classification shall produce a high-confidence candidate even when their event-name wording differs.
 - **FR-72:** A complete and deterministic caption result may remain high confidence when the visual path has no relevant evidence, provided the visual path does not contradict it.
-- **FR-72a:** A complete visual result with at least 0.9 confidence may publish without caption evidence when its date, time, and place are valid and future.
+- **FR-72a:** A complete visual result with at least 0.9 confidence may publish without caption evidence when its date, time, place, and participatory-social classification are valid.
 - **FR-73:** Direct disagreement, missing required data, impossible dates, or invalid schema shall create or update an `ExtractionReviews` row and shall not publish the candidate.
 - **FR-74:** Detected cancellation or material rescheduling shall require review rather than automatically removing or moving a published event.
 - **FR-75:** The Gemini model shall be configurable through `GEMINI_MODEL`.
@@ -174,8 +175,8 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 ### Event identity and lifecycle
 
 - **FR-76:** One event shall be stored once even when several of the latest publications advertise it.
-- **FR-77:** A deterministic event identity shall be based on normalized source account, local event date, and normalized event name.
-- **FR-78:** Time, address, description, and source-publication collections shall remain updateable attributes rather than identity components.
+- **FR-77:** A deterministic event identity shall be based on normalized source account, local start minute, and normalized place.
+- **FR-78:** Event name, description, and source-publication collections shall remain updateable attributes rather than identity components.
 - **FR-79:** The accepted event shall retain all supporting publication IDs and permalinks found during the run.
 - **FR-80:** A newly accepted candidate shall insert an event; a matching candidate shall update mutable fields and `updated_at`.
 - **FR-81:** An unchanged event shall not receive a misleading content-update timestamp.

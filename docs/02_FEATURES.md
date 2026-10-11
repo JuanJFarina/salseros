@@ -19,9 +19,10 @@
 - **Recent-publication inspection:** Retrieve the latest six chronological publications for every enabled source through Meta Business Discovery.
 - **Caption extraction:** Convert publication captions into structured candidate events.
 - **Vision cross-check:** Use Gemini to independently extract event details from images, carousel images, or available video thumbnails.
-- **Confidence gate:** Automatically publish candidates whose date, time, and place evidence agree and pass deterministic validation; accept complete high-confidence visual evidence when a Reel has no caption.
+- **Event-type gate:** Classify each dated dance announcement as social, class, workshop, show, competition, festival, or other. Publish only participatory socials or events explicitly advertising a social-dancing floor.
+- **Confidence gate:** Keep extraction confidence separate from event-type confidence. Automatically publish candidates whose date, time, place, and social classification agree; accept complete high-confidence visual evidence when a Reel has no caption.
 - **Review queue:** Store disagreements, incomplete candidates, and invalid candidates in Google Sheets without publishing them.
-- **Duplicate consolidation:** Merge repeated announcements of the same account, local date, and event rather than creating duplicate events.
+- **Duplicate consolidation:** Merge repeated announcements by account, local date/time, and normalized place rather than event-name wording.
 - **Source provenance:** Retain publication IDs, permalinks, publication timestamps, and extraction freshness for every published event.
 - **Source admission:** Validate new professional accounts through Meta and classify their public profile information with Gemini before automatically adding them to `Sources`. Salsa/bachata schools are accepted even when their profile mainly promotes classes, because the submitted event data is structured.
 - **Global username uniqueness:** A normalized Instagram username exists in `Sources` or `SourceRequests`, never both.

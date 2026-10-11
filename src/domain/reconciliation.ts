@@ -1,7 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 
 import {
-  eventIdFor,
+  eventOccurrenceIdFor,
   normalizeEventText,
   reviewIdFor,
   ROSARIO_TIME_ZONE,
@@ -76,6 +76,12 @@ function candidateIssue(
   if (Date.parse(candidate.startsAt) <= now.getTime()) {
     return "event is not in the future";
   }
+  if (
+    candidate.eventType !== "social" &&
+    !candidate.hasSocialDancing
+  ) {
+    return `event type ${candidate.eventType} is not a participatory social`;
+  }
   return null;
 }
 
@@ -89,7 +95,11 @@ function eventFromCandidate(
 ): EventRecord {
   const timestamp = now.toISOString();
   return {
-    eventId: eventIdFor(username, candidate.startsAt, candidate.name),
+    eventId: eventOccurrenceIdFor(
+      username,
+      candidate.startsAt,
+      candidate.address,
+    ),
     sourceId,
     instagramAccount: username,
     socialName: candidate.name.trim(),
@@ -132,6 +142,16 @@ export function reconcilePublication(
     );
     if (visionResult.events.length > 0 && !visualMatch) {
       issues.push(`caption and vision disagree for ${candidate.name}`);
+      continue;
+    }
+    if (
+      visualMatch &&
+      visualMatch.eventType !== "social" &&
+      !visualMatch.hasSocialDancing
+    ) {
+      issues.push(
+        `vision classifies ${candidate.name} as ${visualMatch.eventType}, not a social`,
+      );
       continue;
     }
     if (!visualMatch && candidate.confidence < 0.85) {

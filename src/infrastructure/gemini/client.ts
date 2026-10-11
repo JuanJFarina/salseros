@@ -13,6 +13,16 @@ const candidateSchema = z.object({
   endsAt: z.string().nullable(),
   address: z.string(),
   evidence: z.string(),
+  eventType: z.enum([
+    "social",
+    "class",
+    "workshop",
+    "show",
+    "competition",
+    "festival",
+    "other",
+  ]),
+  hasSocialDancing: z.boolean(),
   confidence: z.number().min(0).max(1),
 });
 
@@ -42,6 +52,19 @@ const responseJsonSchema = {
           endsAt: { type: ["string", "null"] },
           address: { type: "string" },
           evidence: { type: "string" },
+          eventType: {
+            type: "string",
+            enum: [
+              "social",
+              "class",
+              "workshop",
+              "show",
+              "competition",
+              "festival",
+              "other",
+            ],
+          },
+          hasSocialDancing: { type: "boolean" },
           confidence: { type: "number", minimum: 0, maximum: 1 },
         },
         required: [
@@ -50,6 +73,8 @@ const responseJsonSchema = {
           "endsAt",
           "address",
           "evidence",
+          "eventType",
+          "hasSocialDancing",
           "confidence",
         ],
       },
@@ -123,7 +148,11 @@ export async function extractCaptionEvents(
   return generate(
     [
       "Extract future dance-social events from this Instagram caption.",
-      "Return zero events when the publication is retrospective, a class only, or contains no event announcement.",
+      "Classify every candidate as social, class, workshop, show, competition, festival, or other.",
+      "Set hasSocialDancing true only when attendees are explicitly invited to participate in a social-dancing floor or party.",
+      "Shows, student performances, competitions, classes, and workshops are not socials merely because they involve salsa or bachata.",
+      "A festival is publishable only when it explicitly includes participatory social dancing.",
+      "Return zero events when the publication is retrospective or contains no dated dance announcement.",
       "Resolve Spanish dates relative to the publication timestamp.",
       "Use ISO 8601 timestamps with Argentina offset -03:00.",
       "Use the advertised social name, full street address, and explicit evidence.",
@@ -148,8 +177,12 @@ export async function extractVisionEvents(
         {
           text: [
             "Extract future dance-social events visible in these Instagram publication images.",
+            "Classify every candidate as social, class, workshop, show, competition, festival, or other.",
+            "Set hasSocialDancing true only when attendees are explicitly invited to participate in a social-dancing floor or party.",
+            "Shows, student performances, competitions, classes, and workshops are not socials merely because they involve salsa or bachata.",
+            "A festival is publishable only when it explicitly includes participatory social dancing.",
             "Do not assume details that are not visibly present.",
-            "Return zero events when the images contain no event announcement.",
+            "Return zero events when the images contain no dated dance announcement.",
             "Resolve Spanish dates relative to the publication timestamp.",
             "Use ISO 8601 timestamps with Argentina offset -03:00.",
             `Publication timestamp: ${publishedAt}`,

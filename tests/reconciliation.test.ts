@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type {
+  ExtractedEventType,
   ExtractionResult,
   InstagramPublication,
 } from "@/domain/models";
@@ -22,6 +23,8 @@ function extraction(
   address = "Lagos 1567",
   confidence = 0.95,
   name = "Rumba",
+  eventType: ExtractedEventType = "social",
+  hasSocialDancing = true,
 ): ExtractionResult {
   return {
     events: [
@@ -31,6 +34,8 @@ function extraction(
         endsAt: "2026-10-04T04:00:00-03:00",
         address,
         evidence: "Sábado 3, Lagos 1567",
+        eventType,
+        hasSocialDancing,
         confidence,
       },
     ],
@@ -63,6 +68,16 @@ describe("reconcilePublication", () => {
 
     expect(result.events).toEqual([]);
     expect(result.review?.reason).toContain("disagree");
+
+    const competition = reconcilePublication(
+      "rumbavanaok",
+      publication,
+      extraction("Lagos 1567", 1, "El Mundial", "competition", false),
+      { events: [] },
+      new Date("2026-10-01T12:00:00.000Z"),
+    );
+    expect(competition.events).toEqual([]);
+    expect(competition.review?.reason).toContain("not a participatory social");
   });
 
   it("accepts complete high-confidence evidence from either path", () => {

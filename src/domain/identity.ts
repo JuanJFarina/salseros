@@ -46,6 +46,24 @@ export function eventIdFor(
   return `evt_${compactHash(identity)}`;
 }
 
+export function eventOccurrenceIdFor(
+  username: string,
+  startsAt: string,
+  place: string,
+): string {
+  const localStart = formatInTimeZone(
+    new Date(startsAt),
+    ROSARIO_TIME_ZONE,
+    "yyyy-MM-dd HH:mm",
+  );
+  const identity = [
+    normalizeInstagramUsername(username),
+    localStart,
+    normalizeEventText(place),
+  ].join("|");
+  return `evt_${compactHash(identity)}`;
+}
+
 export function reviewIdFor(sourceId: string, mediaId: string): string {
   return `rev_${compactHash(`${sourceId}|${mediaId}`)}`;
 }

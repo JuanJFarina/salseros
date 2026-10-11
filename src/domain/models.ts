@@ -107,12 +107,23 @@ export type EventRequestRecord = {
   reviewNote: string | null;
 };
 
+export type ExtractedEventType =
+  | "social"
+  | "class"
+  | "workshop"
+  | "show"
+  | "competition"
+  | "festival"
+  | "other";
+
 export type ExtractionCandidate = {
   name: string;
   startsAt: string;
   endsAt: string | null;
   address: string;
   evidence: string;
+  eventType: ExtractedEventType;
+  hasSocialDancing: boolean;
   confidence: number;
 };
 

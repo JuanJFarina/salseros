@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { parse } from "csv-parse/sync";
 
+import { normalizeEventText } from "@/domain/identity";
 import type {
   EventRecord,
   EventRequestRecord,
@@ -321,14 +322,19 @@ function mergeEvents(
   existing: EventRecord[],
   incoming: EventRecord[],
 ): EventRecord[] {
-  const merged = new Map(existing.map((event) => [event.eventId, event]));
-  for (const candidate of incoming) {
-    const current = merged.get(candidate.eventId);
-    if (!current) {
-      merged.set(candidate.eventId, candidate);
+  const merged: EventRecord[] = [];
+  for (const candidate of [...existing, ...incoming]) {
+    const currentIndex = merged.findIndex(
+      (event) =>
+        event.eventId === candidate.eventId ||
+        sameEventOccurrence(event, candidate),
+    );
+    if (currentIndex < 0) {
+      merged.push(candidate);
       continue;
     }
 
+    const current = merged[currentIndex];
     const contentChanged =
       current.socialName !== candidate.socialName ||
       current.nextSocialDate !== candidate.nextSocialDate ||
@@ -336,9 +342,10 @@ function mergeEvents(
       current.address !== candidate.address ||
       current.status !== candidate.status ||
       current.timeApproximate !== candidate.timeApproximate;
-    merged.set(candidate.eventId, {
+    merged[currentIndex] = {
       ...candidate,
-      attendants: current.attendants,
+      eventId: current.eventId,
+      attendants: Math.max(current.attendants, candidate.attendants),
       createdAt: current.createdAt,
       updatedAt: contentChanged ? candidate.updatedAt : current.updatedAt,
       sourceMediaIds: [
@@ -347,9 +354,28 @@ function mergeEvents(
       sourcePermalinks: [
         ...new Set([...current.sourcePermalinks, ...candidate.sourcePermalinks]),
       ],
-    });
+    };
   }
-  return [...merged.values()];
+  return merged;
+}
+
+function sameEventOccurrence(
+  left: EventRecord,
+  right: EventRecord,
+): boolean {
+  if (
+    left.instagramAccount !== right.instagramAccount ||
+    Date.parse(left.nextSocialDate) !== Date.parse(right.nextSocialDate)
+  ) {
+    return false;
+  }
+  const leftPlace = normalizeEventText(left.address);
+  const rightPlace = normalizeEventText(right.address);
+  return (
+    leftPlace === rightPlace ||
+    leftPlace.includes(rightPlace) ||
+    rightPlace.includes(leftPlace)
+  );
 }
 
 let repository: SalseRosRepository | null = null;

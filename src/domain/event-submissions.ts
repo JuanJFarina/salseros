@@ -2,7 +2,7 @@ import { differenceInMinutes, differenceInDays } from "date-fns";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 import {
-  eventIdFor,
+  eventOccurrenceIdFor,
   normalizeEventText,
   normalizeInstagramUsername,
   ROSARIO_TIME_ZONE,
@@ -120,7 +120,11 @@ export function eventFromRequest(
   ).toISOString();
   const timestamp = now.toISOString();
   return {
-    eventId: eventIdFor(request.username, startsAt, request.socialName),
+    eventId: eventOccurrenceIdFor(
+      request.username,
+      startsAt,
+      request.place,
+    ),
     sourceId: sourceIdFor(request.username),
     instagramAccount: request.username,
     socialName: request.socialName,
