@@ -61,6 +61,17 @@ describe("findDuplicateEvent", () => {
     ).toBe(existing.eventId);
   });
 
+  it("matches the same source anywhere on the same local date", () => {
+    expect(
+      findDuplicateEvent(
+        [existing],
+        "first.source",
+        new Date("2026-10-17T21:00:00.000Z"),
+        "Another venue",
+      )?.eventId,
+    ).toBe(existing.eventId);
+  });
+
   it("keeps sufficiently different events separate", () => {
     expect(
       findDuplicateEvent(

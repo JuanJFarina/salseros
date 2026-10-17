@@ -102,7 +102,7 @@ export function findDuplicateEvent(
         normalizeInstagramUsername(event.instagramAccount) ===
         normalizedUsername;
       return (
-        (sameSource && minutes <= 180) ||
+        sameSource ||
         (minutes <= 120 && relatedPlaces(event.address, place))
       );
     }) ?? null

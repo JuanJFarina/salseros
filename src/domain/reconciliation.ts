@@ -3,6 +3,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import {
   eventOccurrenceIdFor,
   normalizeEventText,
+  normalizeInstagramUsername,
   reviewIdFor,
   ROSARIO_TIME_ZONE,
   sourceIdFor,
@@ -218,33 +219,52 @@ export function reconcilePublication(
 }
 
 export function mergeDuplicateEvents(events: EventRecord[]): EventRecord[] {
-  const merged = new Map<string, EventRecord>();
+  const merged: EventRecord[] = [];
 
-  for (const event of events) {
-    const existing = merged.get(event.eventId);
-    if (!existing) {
-      merged.set(event.eventId, event);
+  for (const candidate of events) {
+    const existingIndex = merged.findIndex(
+      (event) =>
+        event.eventId === candidate.eventId ||
+        sameInstagramAccountDate(event, candidate),
+    );
+    if (existingIndex < 0) {
+      merged.push(candidate);
       continue;
     }
 
-    merged.set(event.eventId, {
+    const existing = merged[existingIndex];
+    merged[existingIndex] = {
       ...existing,
       sourceMediaIds: [
-        ...new Set([...existing.sourceMediaIds, ...event.sourceMediaIds]),
+        ...new Set([...existing.sourceMediaIds, ...candidate.sourceMediaIds]),
       ],
       sourcePermalinks: [
-        ...new Set([...existing.sourcePermalinks, ...event.sourcePermalinks]),
+        ...new Set([
+          ...existing.sourcePermalinks,
+          ...candidate.sourcePermalinks,
+        ]),
       ],
       extractionConfidence: Math.max(
         existing.extractionConfidence,
-        event.extractionConfidence,
+        candidate.extractionConfidence,
       ),
       sourcePublishedAt:
-        existing.sourcePublishedAt > event.sourcePublishedAt
+        existing.sourcePublishedAt > candidate.sourcePublishedAt
           ? existing.sourcePublishedAt
-          : event.sourcePublishedAt,
-    });
+          : candidate.sourcePublishedAt,
+    };
   }
 
-  return [...merged.values()];
+  return merged;
+}
+
+export function sameInstagramAccountDate(
+  left: EventRecord,
+  right: EventRecord,
+): boolean {
+  return (
+    normalizeInstagramUsername(left.instagramAccount) ===
+      normalizeInstagramUsername(right.instagramAccount) &&
+    localDate(left.nextSocialDate) === localDate(right.nextSocialDate)
+  );
 }

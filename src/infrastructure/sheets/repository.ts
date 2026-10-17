@@ -1,7 +1,6 @@
 import { createHmac } from "node:crypto";
 import { parse } from "csv-parse/sync";
 
-import { normalizeEventText } from "@/domain/identity";
 import type {
   EventRecord,
   EventRequestRecord,
@@ -9,6 +8,10 @@ import type {
   SourceRecord,
   SourceRequestRecord,
 } from "@/domain/models";
+import {
+  mergeDuplicateEvents,
+  sameInstagramAccountDate,
+} from "@/domain/reconciliation";
 import {
   retainEvents,
   retainEventRequests,
@@ -60,7 +63,9 @@ class GoogleSheetsRepository implements SalseRosRepository {
       console.warn(
         `Public Events CSV returned ${response.status}; using authenticated read`,
       );
-      return (await this.store.read("Events")).map(eventFromRow);
+      return mergeDuplicateEvents(
+        (await this.store.read("Events")).map(eventFromRow),
+      );
     }
 
     const rows = parse(await response.text(), {
@@ -76,11 +81,13 @@ class GoogleSheetsRepository implements SalseRosRepository {
         console.error("Invalid Events row", error);
       }
     }
-    return events;
+    return mergeDuplicateEvents(events);
   }
 
   async listEvents(): Promise<EventRecord[]> {
-    return (await this.store.read("Events")).map(eventFromRow);
+    return mergeDuplicateEvents(
+      (await this.store.read("Events")).map(eventFromRow),
+    );
   }
 
   async listSources(): Promise<SourceRecord[]> {
@@ -327,7 +334,7 @@ function mergeEvents(
     const currentIndex = merged.findIndex(
       (event) =>
         event.eventId === candidate.eventId ||
-        sameEventOccurrence(event, candidate),
+        sameInstagramAccountDate(event, candidate),
     );
     if (currentIndex < 0) {
       merged.push(candidate);
@@ -357,25 +364,6 @@ function mergeEvents(
     };
   }
   return merged;
-}
-
-function sameEventOccurrence(
-  left: EventRecord,
-  right: EventRecord,
-): boolean {
-  if (
-    left.instagramAccount !== right.instagramAccount ||
-    Date.parse(left.nextSocialDate) !== Date.parse(right.nextSocialDate)
-  ) {
-    return false;
-  }
-  const leftPlace = normalizeEventText(left.address);
-  const rightPlace = normalizeEventText(right.address);
-  return (
-    leftPlace === rightPlace ||
-    leftPlace.includes(rightPlace) ||
-    rightPlace.includes(leftPlace)
-  );
 }
 
 let repository: SalseRosRepository | null = null;

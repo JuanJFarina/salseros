@@ -123,4 +123,43 @@ describe("mergeDuplicateEvents", () => {
     expect(merged).toHaveLength(1);
     expect(merged[0].sourceMediaIds).toEqual(["media-1", "media-2"]);
   });
+
+  it("merges events from the same Instagram account on the same local date", () => {
+    const first = reconcilePublication(
+      "rumbavanaok",
+      publication,
+      extraction(),
+      extraction(),
+      new Date("2026-10-01T12:00:00.000Z"),
+    ).events[0];
+    const second = {
+      ...first,
+      eventId: "different-event-id",
+      nextSocialDate: "2026-10-03T22:00:00-03:00",
+      sourceMediaIds: ["media-2"],
+      sourcePermalinks: ["https://www.instagram.com/p/second/"],
+    };
+
+    const merged = mergeDuplicateEvents([first, second]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].sourceMediaIds).toEqual(["media-1", "media-2"]);
+  });
+
+  it("keeps events from the same account on different local dates separate", () => {
+    const first = reconcilePublication(
+      "rumbavanaok",
+      publication,
+      extraction(),
+      extraction(),
+      new Date("2026-10-01T12:00:00.000Z"),
+    ).events[0];
+    const nextNight = {
+      ...first,
+      eventId: "next-night",
+      nextSocialDate: "2026-10-04T22:00:00-03:00",
+    };
+
+    expect(mergeDuplicateEvents([first, nextNight])).toHaveLength(2);
+  });
 });
