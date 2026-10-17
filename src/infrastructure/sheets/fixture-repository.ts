@@ -93,6 +93,7 @@ let sources: SourceRecord[] = usernames.map((username) => ({
   username,
   enabled: true,
   lastSuccessfulWindow: null,
+  recentMediaIds: [],
   lastCheckedAt: null,
   lastError: null,
   createdAt,

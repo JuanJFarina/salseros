@@ -53,6 +53,7 @@ export type SourceRecord = {
   username: string;
   enabled: boolean;
   lastSuccessfulWindow: string | null;
+  recentMediaIds: string[];
   lastCheckedAt: string | null;
   lastError: string | null;
   createdAt: string;

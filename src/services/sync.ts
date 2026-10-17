@@ -30,6 +30,7 @@ import {
 } from "@/infrastructure/meta/client";
 import { downloadVisualAssets } from "@/infrastructure/meta/media";
 import { getRepository } from "@/infrastructure/sheets/repository";
+import { AppError } from "@/utils/errors";
 import { getGeminiSettings, getSyncSettings } from "@/utils/settings";
 
 type SourceSyncResult = {
@@ -118,6 +119,7 @@ function promoteApprovedRequests(
           username: request.username,
           enabled: false,
           lastSuccessfulWindow: null,
+          recentMediaIds: [],
           lastCheckedAt: null,
           lastError:
             "Fuente aprobada manualmente; escaneo de Meta deshabilitado.",
@@ -145,11 +147,12 @@ async function syncSource(
   invocationId: string,
   geminiLimit: ReturnType<typeof pLimit>,
   now: Date,
+  force: boolean,
 ): Promise<SourceSyncResult> {
   const startedAt = new Date().toISOString();
   const syncRunId = syncRunIdFor(source.sourceId, windowKey, invocationId);
 
-  if (source.lastSuccessfulWindow === windowKey) {
+  if (!force && source.lastSuccessfulWindow === windowKey) {
     return {
       source,
       events: [],
@@ -177,8 +180,14 @@ async function syncSource(
 
   try {
     const publications = await fetchRecentPublications(source.username);
+    const processedMediaIds = new Set(source.recentMediaIds);
+    const publicationsToProcess = force
+      ? publications
+      : publications.filter(
+          (publication) => !processedMediaIds.has(publication.mediaId),
+        );
     const reconciled = await Promise.all(
-      publications.map(async (publication) => {
+      publicationsToProcess.map(async (publication) => {
         const captionPromise = geminiLimit(() =>
           extractCaptionEvents(publication.caption, publication.publishedAt),
         );
@@ -212,6 +221,9 @@ async function syncSource(
     const updatedSource: SourceRecord = {
       ...source,
       lastSuccessfulWindow: windowKey,
+      recentMediaIds: publications.map(
+        (publication) => publication.mediaId,
+      ),
       lastCheckedAt: completedAt,
       lastError: null,
       updatedAt: completedAt,
@@ -226,7 +238,7 @@ async function syncSource(
         sourceId: source.sourceId,
         windowKey,
         status: "succeeded",
-        publicationsChecked: publications.length,
+        publicationsChecked: publicationsToProcess.length,
         startedAt,
         completedAt,
         errorCode: null,
@@ -235,7 +247,7 @@ async function syncSource(
       outcome: {
         username: source.username,
         status: "succeeded",
-        publicationsChecked: publications.length,
+        publicationsChecked: publicationsToProcess.length,
         error: null,
       },
     };
@@ -275,6 +287,7 @@ async function syncSource(
 
 export async function synchronizeSources(
   now = new Date(),
+  options: { source?: string; force?: boolean } = {},
 ): Promise<{ response: SyncResponse; status: number }> {
   const startedAt = now.toISOString();
   const invocationId = randomUUID();
@@ -298,12 +311,29 @@ export async function synchronizeSources(
     existingEvents,
     now,
   );
+  const selectedSources = options.source
+    ? sources.filter((source) => source.username === options.source)
+    : sources;
+  if (options.source && selectedSources.length === 0) {
+    throw new AppError(
+      "La cuenta solicitada no está habilitada.",
+      404,
+      "source_not_found",
+    );
+  }
   const sourceLimit = pLimit(getSyncSettings().maxConcurrency);
   const geminiLimit = pLimit(getGeminiSettings().maxConcurrency);
   const results = await Promise.all(
-    sources.map((source) =>
+    selectedSources.map((source) =>
       sourceLimit(() =>
-        syncSource(source, windowKey, invocationId, geminiLimit, now),
+        syncSource(
+          source,
+          windowKey,
+          invocationId,
+          geminiLimit,
+          now,
+          options.force ?? false,
+        ),
       ),
     ),
   );

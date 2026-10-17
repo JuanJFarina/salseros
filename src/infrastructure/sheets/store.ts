@@ -8,6 +8,7 @@ export const SHEET_HEADERS = {
     "username",
     "enabled",
     "last_successful_window",
+    "recent_media_ids",
     "last_checked_at",
     "last_error",
     "created_at",

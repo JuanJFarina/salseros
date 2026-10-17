@@ -216,6 +216,7 @@ export async function submitCommunityEvent(
       username,
       enabled: true,
       lastSuccessfulWindow: null,
+      recentMediaIds: [],
       lastCheckedAt: null,
       lastError: null,
       createdAt: timestamp,

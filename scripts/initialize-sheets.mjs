@@ -9,6 +9,7 @@ const headers = {
     "username",
     "enabled",
     "last_successful_window",
+    "recent_media_ids",
     "last_checked_at",
     "last_error",
     "created_at",
@@ -240,6 +241,7 @@ const newSources = initialSources
     "",
     "",
     "",
+    "",
     timestamp,
     timestamp,
   ]);
@@ -249,6 +251,7 @@ const newRecurringSources = recurringSources
     `src_${createHash("sha256").update(username).digest("hex").slice(0, 24)}`,
     username,
     "false",
+    "",
     "",
     "",
     note,

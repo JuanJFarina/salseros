@@ -112,7 +112,7 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 
 ### Synchronization endpoint
 
-- **FR-37:** Synchronization shall be exposed as `GET /api/sync?key=<password>`.
+- **FR-37:** Synchronization shall be exposed as `GET /api/sync?key=<password>`, with optional `source=<username>` and `force=true` parameters.
 - **FR-38:** The endpoint shall compare the supplied key with `SYNC_PASSWORD` and return `401` when it is absent or invalid.
 - **FR-39:** The endpoint shall set `Cache-Control: no-store`.
 - **FR-40:** Application logs and response bodies shall not contain the supplied key.
@@ -124,6 +124,9 @@ The MVP intentionally uses lightweight validation, a public spreadsheet, and ext
 - **FR-44:** A source already completed successfully in the active window shall be skipped.
 - **FR-45:** A retry shall process sources that failed or were not attempted in the active window.
 - **FR-46:** Source inspections shall run concurrently through a configurable bounded pool.
+- **FR-46a:** Each source shall persist its latest processed media IDs and send only unseen publications to Gemini during normal synchronization.
+- **FR-46b:** A successful source with no unseen publications shall complete without Gemini calls.
+- **FR-46c:** `source` shall limit execution to one enabled source; `force=true` shall ignore its window and media-ID caches.
 - **FR-47:** The orchestrator shall wait for every source to settle before entering the persistence phase.
 - **FR-48:** No extraction result shall be written while source inspection remains in progress.
 - **FR-49:** Successful source results, reviews, source state, and run state shall be persisted in a final batched phase.

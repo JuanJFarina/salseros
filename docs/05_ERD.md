@@ -17,6 +17,7 @@ erDiagram
         string username UK
         boolean enabled
         string last_successful_window
+        string recent_media_ids
         datetime last_checked_at
         string last_error
         datetime created_at
@@ -120,6 +121,7 @@ erDiagram
 - `username` is lowercase and stored without `@`.
 - `enabled` is the synchronization switch.
 - `last_successful_window` controls idempotency independently of event updates.
+- `recent_media_ids` is a serialized bounded list used to avoid reprocessing unchanged Instagram publications.
 - Changing a username creates a new source unless the operator performs an explicit migration.
 
 ### Events

@@ -66,6 +66,8 @@ These occurrences are generated from application configuration and never scanned
 - **Externally scheduled execution:** Allow a separate scheduler to call the endpoint; scheduling is not owned by SalseRos.
 - **Two synchronization windows:** Treat Monday-to-Wednesday and Wednesday-to-Monday as distinct idempotency windows in Rosario time.
 - **Parallel source processing:** Inspect source accounts concurrently with a configurable limit and wait for all results before writing.
+- **Incremental media processing:** Persist the latest processed Instagram media IDs per source and invoke Gemini only for unseen publications.
+- **Targeted recovery:** Allow an authenticated synchronization request to select one source and optionally force reprocessing.
 - **Partial success:** Persist successful accounts in a final batched write while preserving existing data for failed accounts.
 - **Spreadsheet administration:** Use a public Google spreadsheet as the operational interface for sources, events, pending requests, reviews, and run history.
 - **Freshness tracking:** Record event `updated_at` values and per-source/per-run synchronization state.

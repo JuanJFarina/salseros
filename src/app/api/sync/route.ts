@@ -1,12 +1,13 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
+import { normalizeInstagramUsername } from "@/domain/identity";
 import { synchronizeSources } from "@/services/sync";
-import { errorResponse } from "@/utils/errors";
+import { AppError, errorResponse } from "@/utils/errors";
 import { getSyncSettings } from "@/utils/settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 30;
 
 function digest(value: string): Buffer {
   return createHash("sha256").update(value).digest();
@@ -14,7 +15,8 @@ function digest(value: string): Buffer {
 
 export async function GET(request: Request) {
   try {
-    const supplied = new URL(request.url).searchParams.get("key") ?? "";
+    const url = new URL(request.url);
+    const supplied = url.searchParams.get("key") ?? "";
     if (!timingSafeEqual(digest(supplied), digest(getSyncSettings().password))) {
       return Response.json(
         { error: { code: "unauthorized", message: "Unauthorized" } },
@@ -25,7 +27,23 @@ export async function GET(request: Request) {
       );
     }
 
-    const result = await synchronizeSources();
+    const rawSource = url.searchParams.get("source");
+    let source: string | undefined;
+    if (rawSource) {
+      try {
+        source = normalizeInstagramUsername(rawSource);
+      } catch {
+        throw new AppError(
+          "La cuenta solicitada no es válida.",
+          400,
+          "invalid_source",
+        );
+      }
+    }
+    const result = await synchronizeSources(new Date(), {
+      source,
+      force: url.searchParams.get("force") === "true",
+    });
     return Response.json(result.response, {
       status: result.status,
       headers: { "Cache-Control": "no-store" },

@@ -14,6 +14,7 @@ User accounts, verified attendance, Stories, scraping, ticketing, maps, notifica
 - **Hosting:** Vercel.
 - **Styling:** Small global stylesheet with design tokens; no UI framework is required.
 - **Instagram:** Meta Graph Business Discovery only; latest six chronological publications per source.
+- **Incremental synchronization:** Persist recently processed media IDs per source so routine runs analyze only new publications.
 - **Recurring exceptions:** Generate Torito and Salsipuedes from explicit weekly configuration and omit them from Meta scans.
 - **Meta token:** Exchange short-lived Facebook User tokens for approximately 60-day tokens and monitor expiry; do not assume unattended refresh is available.
 - **Extraction:** Gemini structured output with separate caption and visual evidence paths.
@@ -46,6 +47,7 @@ Persistence is intentionally bounded: expired events and their RSVPs are removed
 - No visitor registration or personal-data collection.
 - Warm event-feed response normally below one second.
 - Bounded provider concurrency, explicit timeouts, and partial-source tolerance.
+- Routine no-change synchronization should complete within the 30-second serverless request limit without invoking Gemini.
 - Server-only credentials and structured logs without secrets.
 - Deterministic timezone behavior in `America/Argentina/Cordoba`.
 - No live external APIs in automated tests.
